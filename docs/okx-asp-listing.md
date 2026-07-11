@@ -18,11 +18,11 @@ Lifestyle Companion / Real Estate / Decision Support
 
 ## Short Description
 
-Terra Compare helps agents and users compare 2 to 5 real estate options, estimate hidden costs, rank properties, and return a clear recommendation.
+Terra Compare helps agents and users compare 2 to 5 global real estate options, estimate hidden costs, rank properties, and return a clear recommendation.
 
 ## Long Description
 
-Terra Compare is the first Terra AI skill: an A2MCP-style real estate comparison service for OKX.AI. It accepts property details such as listing links, addresses, price, bedrooms, size, condition, fees, and user preferences. It returns a structured report with side-by-side comparisons, pros and cons, hidden-cost estimates, weighted scoring, confidence labels, and a final recommendation with reasoning.
+Terra Compare is the first Terra AI skill: an A2MCP-style real estate comparison service for OKX.AI. It accepts property details from any market, including listing links, addresses, price, bedrooms, size, condition, fees, and user preferences. It returns a structured report with side-by-side comparisons, pros and cons, hidden-cost estimates, weighted scoring, confidence labels, and a final recommendation with reasoning.
 
 ## User Problem
 
@@ -83,7 +83,7 @@ Before final marketplace launch, replace the stubbed verifier with the OKX.AI-re
 
 ## 90-Second Demo Voiceover
 
-Terra AI is an AI-powered real estate assistant. Our first OKX.AI ASP is Terra Compare, a pay-per-call property comparison service. A user or agent can send two to five properties, along with preferences like budget, must-haves, location priority, living quality, and investment potential. Terra Compare returns a structured report with side-by-side comparison, hidden-cost estimates, pros and cons, weighted scoring, and a final recommendation.
+Terra AI is an AI-powered real estate assistant for global property decisions. Our first OKX.AI ASP is Terra Compare, a pay-per-call property comparison service. A user or agent can send two to five properties from any market, along with preferences like budget, must-haves, location priority, living quality, and investment potential. Terra Compare returns a structured report with side-by-side comparison, hidden-cost estimates, pros and cons, weighted scoring, and a final recommendation.
 
 This matters because property decisions are high-stakes and messy. Listings do not explain tradeoffs clearly, and buyers often miss hidden costs. Terra Compare gives agents a professional decision layer they can call instantly and present to users in plain language. This is the first Terra AI skill, and later Terra AI will expand into a full real estate planning agent.
 
