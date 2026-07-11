@@ -52,6 +52,25 @@ Optional MVP payment header:
 
 `x-terra-payment-proof: demo`
 
+Real payment mode:
+
+Set `X402_MODE=okx` in Railway and add the OKX x402 credentials plus payout address before presenting the service as payment-verified.
+
+Required env vars:
+
+- `OKX_API_KEY`
+- `OKX_SECRET_KEY`
+- `OKX_PASSPHRASE`
+- `X402_PAY_TO_ADDRESS`
+- `X402_NETWORK`
+- `X402_PRICE`
+
+## Data Accuracy Disclosure
+
+Use this wording in the listing if there is a disclosure field:
+
+`Terra Compare analyzes property data supplied by the caller. It does not fetch live listing feeds or verify market data in the current MVP. Reports include confidence and data-quality metadata, and hidden costs are estimates for decision support only.`
+
 ## Example Request
 
 Use [`examples/compare-primary-home.json`](../examples/compare-primary-home.json) for a global home-buyer scenario.

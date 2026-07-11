@@ -71,15 +71,19 @@ Recommended first test price:
 
 ## x402 Payment Status
 
-The current MVP has an isolated x402 middleware layer and accepts the `x-terra-payment-proof` header in stub mode. This keeps the API shape ready for pay-per-call usage while final OKX.AI x402 verification details are connected.
+The service has a configurable x402 middleware layer.
 
 Current production settings:
 
-- `X402_STUB_MODE=true`
+- `X402_MODE=demo`
 - `X402_REQUIRE_HEADER=false`
 - `X402_PAYMENT_HEADER_NAME=x-terra-payment-proof`
 
-Before final marketplace launch, replace the stubbed verifier with the OKX.AI-required x402 verification flow while keeping the route contract unchanged.
+Real OKX x402 enforcement is supported by setting `X402_MODE=okx` and configuring `OKX_API_KEY`, `OKX_SECRET_KEY`, `OKX_PASSPHRASE`, `X402_PAY_TO_ADDRESS`, `X402_NETWORK`, and `X402_PRICE`.
+
+## Data Accuracy Status
+
+Terra Compare currently compares the property data supplied by the caller. It does not fetch live listing feeds, tax records, rental comps, or insurance quotes yet. The API response includes `dataQuality` and per-property `confidence` metadata so agents can disclose whether a report is high-confidence or based on limited supplied data.
 
 ## 90-Second Demo Voiceover
 

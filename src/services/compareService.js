@@ -38,6 +38,31 @@ function confidenceLabel(coverage) {
   return "low";
 }
 
+function inferInputType(property) {
+  if (property.rawInput && property.url) return "listing_url";
+  if (property.rawInput && property.address) return "plain_text_or_address";
+  return "structured_property_details";
+}
+
+function buildDataQualitySummary(properties) {
+  const averageCoverage =
+    properties.reduce((sum, property) => sum + property.dataCoverage, 0) /
+    properties.length;
+
+  return {
+    dataSource: "user_provided",
+    liveDataUsed: false,
+    liveDataProviders: [],
+    averageDataCoverage: Number(averageCoverage.toFixed(2)),
+    confidence: confidenceLabel(averageCoverage),
+    accuracyNotes: [
+      "This report compares property details supplied in the request.",
+      "The service does not fetch live listing, tax, insurance, or market data yet.",
+      "Hidden costs are heuristic estimates and should be verified with local professionals before making a financial decision."
+    ]
+  };
+}
+
 function buildSideBySide(properties) {
   const columns = properties.map((property) => ({
     id: property.id,
@@ -199,6 +224,9 @@ function buildPropertyReports(properties) {
     grade: property.grade,
     overallScore: property.overallScore,
     propertySnapshot: {
+      inputType: inferInputType(property),
+      dataSource: "user_provided",
+      liveDataUsed: false,
       address: property.address || null,
       url: property.url || null,
       price: property.price,
@@ -219,7 +247,11 @@ function buildPropertyReports(properties) {
     matchSummary: property.matchSummary,
     confidence: {
       dataCoverage: Number(property.dataCoverage.toFixed(2)),
-      label: confidenceLabel(property.dataCoverage)
+      label: confidenceLabel(property.dataCoverage),
+      limitations: [
+        "No live listing feed was queried for this property.",
+        "Scores depend on the completeness and accuracy of the provided input."
+      ]
     }
   }));
 }
@@ -241,9 +273,12 @@ function compareProperties(payload, payment = null) {
     payment: payment
       ? {
           protocol: payment.protocol,
+          mode: payment.mode,
           status: payment.status,
           accepted: payment.accepted,
-          verified: payment.verified
+          verified: payment.verified,
+          network: payment.network || null,
+          price: payment.price || null
         }
       : null,
     summary: {
@@ -253,6 +288,7 @@ function compareProperties(payload, payment = null) {
       userGoal: normalized.preferences.purpose,
       recommendationHeadline: `${rankedProperties[0].name} is the strongest overall match based on your priorities and the available data.`
     },
+    dataQuality: buildDataQualitySummary(rankedProperties),
     preferencesUsed: normalized.preferences,
     sideBySide: buildSideBySide(rankedProperties),
     ranking: buildRanking(rankedProperties),

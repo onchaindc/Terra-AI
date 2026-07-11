@@ -13,7 +13,7 @@ router.get("/", (req, res) => {
     endpoint: "/api/v1/compare",
     supports: {
       propertiesPerRequest: "2 to 5",
-      paymentProtocol: "x402 (stubbed in MVP)",
+      paymentProtocol: "x402 (demo or OKX-enforced mode)",
       output: ["json", "markdown"]
     },
     notes: [

@@ -26,6 +26,7 @@ function getMethodologySummary() {
     ],
     caveats: [
       "If the input contains only links or plain addresses, the comparison confidence will be lower.",
+      "This MVP does not fetch live listing feeds or verify market data yet.",
       "Hidden-cost estimates are heuristic and should not replace local legal, tax, or inspection advice.",
       "Scores are best used as a decision aid, not a final buying decision."
     ]
@@ -105,6 +106,10 @@ function buildMarkdownReport(report) {
   lines.push("");
   lines.push(
     `This result uses normalized inputs, hidden-cost heuristics, and weighted scoring based on your stated priorities.`
+  );
+  lines.push("");
+  lines.push(
+    `Data note: Terra Compare uses the property details supplied in the request. It does not fetch live listing, tax, insurance, or market feeds in this version.`
   );
 
   return lines.join("\n");

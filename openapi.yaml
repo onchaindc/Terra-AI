@@ -29,7 +29,8 @@ paths:
       summary: Compare 2 to 5 properties
       description: >
         Generates a structured property comparison report. The MVP accepts the
-        x-terra-payment-proof header as an isolated x402 payment stub.
+        x-terra-payment-proof header in demo mode. Set X402_MODE=okx with OKX
+        credentials to enforce real x402 payment verification.
       parameters:
         - in: header
           name: x-terra-payment-proof
@@ -51,7 +52,7 @@ paths:
         "402":
           description: Payment required when payment proof is enforced.
         "501":
-          description: Real x402 verification is not implemented in MVP mode.
+          description: Payment mode is not available or not configured.
 components:
   schemas:
     CompareRequest:
@@ -178,3 +179,26 @@ components:
         outputFormat:
           type: string
           enum: [json, markdown, both]
+    DataQuality:
+      type: object
+      properties:
+        dataSource:
+          type: string
+          example: user_provided
+        liveDataUsed:
+          type: boolean
+          example: false
+        liveDataProviders:
+          type: array
+          items:
+            type: string
+        averageDataCoverage:
+          type: number
+          example: 0.8
+        confidence:
+          type: string
+          enum: [low, medium, high]
+        accuracyNotes:
+          type: array
+          items:
+            type: string

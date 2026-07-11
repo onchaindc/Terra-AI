@@ -27,7 +27,36 @@ Terra AI is not limited to one country or city. The API accepts structured detai
 - Estimated hidden costs
 - Weighted scoring and ranking
 - Clear final recommendation
-- x402 payment middleware isolated as an MVP stub
+- Configurable payment mode: demo, off, or real OKX x402 when credentials are provided
+- Data-quality metadata that explains whether results are based on supplied input, heuristics, or live feeds
+
+## Current accuracy model
+
+Terra Compare currently compares the property data supplied by the caller. It does not fetch live listing feeds, tax records, insurance quotes, rental comps, or market-price feeds yet.
+
+That means:
+
+- structured inputs produce the best reports
+- plain addresses or links produce lower-confidence reports unless another agent enriches them first
+- hidden costs are estimates, not verified local legal/tax/inspection advice
+- every response includes `dataQuality` and per-property `confidence` metadata
+
+## Payment mode
+
+The service supports three modes through `X402_MODE`:
+
+- `demo`: accepts calls for testing and marks payment as unverified
+- `okx`: uses OKX x402 middleware and requires OKX credentials plus a payout wallet
+- `off`: disables payment checks
+
+To enable real OKX x402 payment verification, set `X402_MODE=okx` and configure:
+
+- `OKX_API_KEY`
+- `OKX_SECRET_KEY`
+- `OKX_PASSPHRASE`
+- `X402_PAY_TO_ADDRESS`
+- `X402_NETWORK`
+- `X402_PRICE`
 
 ## Example scenarios
 
