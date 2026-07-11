@@ -1,0 +1,38 @@
+{
+  "name": "terra-compare-a2mcp",
+  "version": "1.0.0",
+  "description": "Terra Compare MVP - AI-powered real estate comparison service for OKX.AI",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "start:prod": "cross-env NODE_ENV=production node src/server.js"
+  },
+  "keywords": [
+    "terra-ai",
+    "real-estate",
+    "a2mcp",
+    "okx-ai",
+    "x402",
+    "express",
+    "property-comparison"
+  ],
+  "author": "Terra AI",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.1.4"
+  }
+}
