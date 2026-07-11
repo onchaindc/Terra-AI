@@ -1,0 +1,74 @@
+{
+  "properties": [
+    {
+      "name": "Dubai Marina Studio",
+      "address": "Dubai Marina, Dubai",
+      "price": 245000,
+      "currency": "USD",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "sizeSqm": 48,
+      "condition": "excellent",
+      "estimatedHoaMonthly": 210,
+      "rentalYieldPercent": 6.4,
+      "appreciationScore": 8,
+      "locationScore": 9,
+      "amenityScore": 9,
+      "features": ["metro access", "pool", "gym"],
+      "investmentPotentialScore": 8,
+      "livingQualityScore": 8
+    },
+    {
+      "name": "JVC One-Bed Apartment",
+      "address": "Jumeirah Village Circle, Dubai",
+      "price": 185000,
+      "currency": "USD",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "sizeSqm": 68,
+      "condition": "good",
+      "estimatedHoaMonthly": 140,
+      "rentalYieldPercent": 7.1,
+      "appreciationScore": 7,
+      "locationScore": 7,
+      "amenityScore": 7,
+      "features": ["parking", "balcony"],
+      "investmentPotentialScore": 8,
+      "livingQualityScore": 7
+    },
+    {
+      "name": "Business Bay Compact Flat",
+      "address": "Business Bay, Dubai",
+      "price": 220000,
+      "currency": "USD",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "sizeSqm": 52,
+      "condition": "new",
+      "estimatedHoaMonthly": 190,
+      "rentalYieldPercent": 6.8,
+      "appreciationScore": 9,
+      "locationScore": 8,
+      "amenityScore": 8,
+      "features": ["canal view", "parking", "gym"],
+      "investmentPotentialScore": 9,
+      "livingQualityScore": 8
+    }
+  ],
+  "userPreferences": {
+    "budget": 230000,
+    "currency": "USD",
+    "mustHaves": ["parking"],
+    "purpose": "rental_investment",
+    "priorities": {
+      "price": 20,
+      "location": 20,
+      "investmentPotential": 35,
+      "livingQuality": 5,
+      "size": 5,
+      "condition": 5,
+      "hiddenCosts": 10
+    },
+    "outputFormat": "both"
+  }
+}

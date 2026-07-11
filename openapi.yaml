@@ -1,0 +1,180 @@
+openapi: 3.1.0
+info:
+  title: Terra Compare API
+  version: 1.0.0
+  summary: A2MCP property comparison service for Terra AI.
+  description: >
+    Terra Compare accepts 2 to 5 real estate options plus user preferences,
+    then returns a structured side-by-side comparison, hidden-cost estimate,
+    ranking, and final recommendation.
+servers:
+  - url: https://terra-ai.up.railway.app
+    description: Production
+  - url: http://localhost:3000
+    description: Local development
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Service is available.
+  /api/v1/compare:
+    get:
+      summary: Compare endpoint metadata
+      responses:
+        "200":
+          description: Explains how to call the compare endpoint.
+    post:
+      summary: Compare 2 to 5 properties
+      description: >
+        Generates a structured property comparison report. The MVP accepts the
+        x-terra-payment-proof header as an isolated x402 payment stub.
+      parameters:
+        - in: header
+          name: x-terra-payment-proof
+          required: false
+          schema:
+            type: string
+          description: MVP x402 payment proof header.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompareRequest"
+      responses:
+        "200":
+          description: Comparison report generated successfully.
+        "400":
+          description: Invalid request payload.
+        "402":
+          description: Payment required when payment proof is enforced.
+        "501":
+          description: Real x402 verification is not implemented in MVP mode.
+components:
+  schemas:
+    CompareRequest:
+      type: object
+      required:
+        - properties
+      properties:
+        properties:
+          type: array
+          minItems: 2
+          maxItems: 5
+          items:
+            oneOf:
+              - type: string
+                minLength: 3
+              - $ref: "#/components/schemas/PropertyInput"
+        userPreferences:
+          $ref: "#/components/schemas/UserPreferences"
+    PropertyInput:
+      type: object
+      additionalProperties: true
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        url:
+          type: string
+          format: uri
+        price:
+          type: number
+        currency:
+          type: string
+          example: USD
+        bedrooms:
+          type: number
+        bathrooms:
+          type: number
+        sizeSqm:
+          type: number
+        condition:
+          type: string
+          enum: [new, excellent, good, fair, needs_work, fixer_upper]
+        estimatedHoaMonthly:
+          type: number
+        annualPropertyTax:
+          type: number
+        schoolScore:
+          type: number
+          minimum: 0
+          maximum: 10
+        safetyScore:
+          type: number
+          minimum: 0
+          maximum: 10
+        amenityScore:
+          type: number
+          minimum: 0
+          maximum: 10
+        locationScore:
+          type: number
+          minimum: 0
+          maximum: 10
+        commuteMinutes:
+          type: number
+        rentalYieldPercent:
+          type: number
+        appreciationScore:
+          type: number
+        livingQualityScore:
+          type: number
+        investmentPotentialScore:
+          type: number
+        features:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+    UserPreferences:
+      type: object
+      properties:
+        budget:
+          type: number
+        currency:
+          type: string
+          example: USD
+        mustHaves:
+          type: array
+          items:
+            type: string
+        dealBreakers:
+          type: array
+          items:
+            type: string
+        minBedrooms:
+          type: number
+        minBathrooms:
+          type: number
+        minSizeSqm:
+          type: number
+        maxCommuteMinutes:
+          type: number
+        purpose:
+          type: string
+          enum: [primary_home, rental_investment, flip, vacation_home, mixed]
+        priorities:
+          type: object
+          properties:
+            price:
+              type: number
+            location:
+              type: number
+            investmentPotential:
+              type: number
+            livingQuality:
+              type: number
+            size:
+              type: number
+            condition:
+              type: number
+            hiddenCosts:
+              type: number
+        outputFormat:
+          type: string
+          enum: [json, markdown, both]

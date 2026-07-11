@@ -1,0 +1,75 @@
+{
+  "properties": [
+    {
+      "name": "Lekki 3-Bed Apartment",
+      "address": "Lekki Phase 1, Lagos",
+      "price": 120000,
+      "currency": "USD",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "sizeSqm": 145,
+      "condition": "good",
+      "amenityScore": 8,
+      "safetyScore": 7,
+      "schoolScore": 7,
+      "commuteMinutes": 25,
+      "estimatedHoaMonthly": 180,
+      "features": ["parking", "balcony", "gated estate"],
+      "investmentPotentialScore": 8,
+      "livingQualityScore": 8
+    },
+    {
+      "name": "Yaba Modern Duplex",
+      "address": "Yaba, Lagos",
+      "price": 98000,
+      "currency": "USD",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "sizeSqm": 132,
+      "condition": "excellent",
+      "amenityScore": 7,
+      "safetyScore": 6,
+      "schoolScore": 8,
+      "commuteMinutes": 18,
+      "estimatedHoaMonthly": 90,
+      "features": ["parking", "home office"],
+      "investmentPotentialScore": 7,
+      "livingQualityScore": 7
+    },
+    {
+      "name": "Ikoyi Premium Flat",
+      "address": "Ikoyi, Lagos",
+      "price": 165000,
+      "currency": "USD",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "sizeSqm": 160,
+      "condition": "new",
+      "amenityScore": 9,
+      "safetyScore": 9,
+      "schoolScore": 8,
+      "commuteMinutes": 30,
+      "estimatedHoaMonthly": 260,
+      "features": ["parking", "gym", "balcony", "pool"],
+      "investmentPotentialScore": 9,
+      "livingQualityScore": 9
+    }
+  ],
+  "userPreferences": {
+    "budget": 130000,
+    "currency": "USD",
+    "mustHaves": ["parking", "balcony"],
+    "minBedrooms": 3,
+    "purpose": "primary_home",
+    "priorities": {
+      "price": 30,
+      "location": 20,
+      "livingQuality": 20,
+      "investmentPotential": 10,
+      "size": 10,
+      "condition": 5,
+      "hiddenCosts": 5
+    },
+    "outputFormat": "both"
+  }
+}
