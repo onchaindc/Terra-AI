@@ -76,6 +76,13 @@ function buildOkxMiddleware() {
   const network = process.env.X402_NETWORK || "eip155:196";
   const price = process.env.X402_PRICE || "$0.01";
   const payTo = process.env.X402_PAY_TO_ADDRESS;
+  const accepts = {
+    scheme: "exact",
+    network,
+    payTo,
+    price,
+    maxTimeoutSeconds: Number(process.env.X402_MAX_TIMEOUT_SECONDS) || 60
+  };
 
   const facilitatorClient = new OKXFacilitatorClient({
     apiKey: process.env.OKX_API_KEY,
@@ -93,14 +100,23 @@ function buildOkxMiddleware() {
   const middleware = paymentMiddleware(
     {
       "POST /": {
-        accepts: {
-          scheme: "exact",
-          network,
-          payTo,
-          price,
-          maxTimeoutSeconds: Number(process.env.X402_MAX_TIMEOUT_SECONDS) || 60
-        },
+        accepts,
         description: "Terra Compare property comparison report",
+        mimeType: "application/json"
+      },
+      "POST /hidden-costs": {
+        accepts,
+        description: "Terra Hidden Costs first-year property cost estimate",
+        mimeType: "application/json"
+      },
+      "POST /investment-check": {
+        accepts,
+        description: "Terra Investment Check property investment score",
+        mimeType: "application/json"
+      },
+      "POST /buyer-fit": {
+        accepts,
+        description: "Terra Buyer Fit property preference score",
         mimeType: "application/json"
       }
     },
