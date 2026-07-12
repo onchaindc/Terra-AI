@@ -1,0 +1,35 @@
+{
+  "property": {
+    "name": "Sri Lanka Inland Bungalow",
+    "address": "Galle District, Sri Lanka",
+    "price": 68000,
+    "currency": "USD",
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "sizeSqm": 120,
+    "condition": "fair",
+    "estimatedHoaMonthly": 0,
+    "safetyScore": 7,
+    "amenityScore": 6,
+    "locationScore": 7,
+    "commuteMinutes": 35,
+    "features": ["garden", "quiet area", "road access"],
+    "notes": "Likely needs cosmetic renovation; distance to beach should be verified."
+  },
+  "userPreferences": {
+    "budget": 70000,
+    "currency": "USD",
+    "purpose": "primary_home",
+    "mustHaves": ["garden", "road access"],
+    "dealBreakers": ["major renovation"],
+    "minBedrooms": 2,
+    "maxCommuteMinutes": 45,
+    "priorities": {
+      "price": 30,
+      "location": 25,
+      "livingQuality": 20,
+      "hiddenCosts": 15,
+      "condition": 10
+    }
+  }
+}

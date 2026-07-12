@@ -11,6 +11,9 @@ Terra AI is not limited to one country or city. The API accepts structured detai
 - Production root: `https://terra-ai.up.railway.app/`
 - Health: `https://terra-ai.up.railway.app/health`
 - Compare endpoint: `POST https://terra-ai.up.railway.app/api/v1/compare`
+- Hidden costs endpoint: `POST https://terra-ai.up.railway.app/api/v1/hidden-costs`
+- Investment check endpoint: `POST https://terra-ai.up.railway.app/api/v1/investment-check`
+- Buyer fit endpoint: `POST https://terra-ai.up.railway.app/api/v1/buyer-fit`
 - OpenAPI contract: [`openapi.yaml`](./openapi.yaml)
 - OKX.AI ASP listing notes: [`docs/okx-asp-listing.md`](./docs/okx-asp-listing.md)
 - OKX.AI listing guide: [`docs/okx-listing-guide.md`](./docs/okx-listing-guide.md)
@@ -25,6 +28,9 @@ Terra AI is not limited to one country or city. The API accepts structured detai
 - Side-by-side property comparison
 - Pros and cons for each property
 - Estimated hidden costs
+- Single-property hidden-cost checks
+- Rental/investment fit scoring
+- Buyer-fit scoring against must-haves and deal-breakers
 - Weighted scoring and ranking
 - Clear final recommendation
 - Configurable payment mode: demo, off, or real OKX x402 when credentials are provided

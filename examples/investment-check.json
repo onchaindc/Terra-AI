@@ -1,0 +1,31 @@
+{
+  "property": {
+    "name": "Ajah Rental Duplex",
+    "address": "Ajah, Lagos, Nigeria",
+    "price": 95000,
+    "currency": "USD",
+    "bedrooms": 4,
+    "bathrooms": 4,
+    "sizeSqm": 210,
+    "condition": "good",
+    "estimatedHoaMonthly": 90,
+    "rentalYieldPercent": 7.2,
+    "appreciationScore": 7,
+    "locationScore": 7,
+    "investmentPotentialScore": 8,
+    "features": ["gated estate", "tenant demand", "parking"],
+    "notes": "Potential rental demand from commuters; road access should be verified."
+  },
+  "userPreferences": {
+    "budget": 100000,
+    "currency": "USD",
+    "purpose": "rental_investment",
+    "priorities": {
+      "price": 20,
+      "location": 20,
+      "investmentPotential": 35,
+      "hiddenCosts": 15,
+      "condition": 10
+    }
+  }
+}

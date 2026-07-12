@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 
 const compareRoutes = require("./routes/compare");
+const toolRoutes = require("./routes/tools");
 
 function createApp() {
   const app = express();
@@ -22,7 +23,10 @@ function createApp() {
         "A2MCP property comparison service for real estate buyers, renters, and investors.",
       endpoints: {
         health: "/health",
-        compare: "/api/v1/compare"
+        compare: "/api/v1/compare",
+        hiddenCosts: "/api/v1/hidden-costs",
+        investmentCheck: "/api/v1/investment-check",
+        buyerFit: "/api/v1/buyer-fit"
       }
     });
   });
@@ -37,6 +41,7 @@ function createApp() {
   });
 
   app.use("/api/v1/compare", compareRoutes);
+  app.use("/api/v1", toolRoutes);
 
   app.use((req, res) => {
     res.status(404).json({

@@ -53,8 +53,91 @@ paths:
           description: Payment required when payment proof is enforced.
         "501":
           description: Payment mode is not available or not configured.
+  /api/v1/hidden-costs:
+    get:
+      summary: Hidden costs endpoint metadata
+      responses:
+        "200":
+          description: Explains how to call the hidden costs endpoint.
+    post:
+      summary: Estimate hidden costs for one property
+      description: >
+        Estimates first-year hidden costs for one supplied property, including
+        closing costs, repair reserve, property tax, insurance, maintenance,
+        and HOA or service fees.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SinglePropertyRequest"
+      responses:
+        "200":
+          description: Hidden-cost estimate generated successfully.
+        "400":
+          description: Invalid request payload.
+        "402":
+          description: Payment required when payment proof is enforced.
+  /api/v1/investment-check:
+    get:
+      summary: Investment check endpoint metadata
+      responses:
+        "200":
+          description: Explains how to call the investment check endpoint.
+    post:
+      summary: Score one property for investment fit
+      description: >
+        Scores one property for rental or investment potential using supplied
+        yield, appreciation, location, condition, hidden-cost, and preference
+        signals.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SinglePropertyRequest"
+      responses:
+        "200":
+          description: Investment check generated successfully.
+        "400":
+          description: Invalid request payload.
+        "402":
+          description: Payment required when payment proof is enforced.
+  /api/v1/buyer-fit:
+    get:
+      summary: Buyer fit endpoint metadata
+      responses:
+        "200":
+          description: Explains how to call the buyer fit endpoint.
+    post:
+      summary: Score one property against buyer preferences
+      description: >
+        Scores one property against a buyer's budget, must-haves,
+        deal-breakers, commute, size, condition, and living-quality priorities.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SinglePropertyRequest"
+      responses:
+        "200":
+          description: Buyer-fit check generated successfully.
+        "400":
+          description: Invalid request payload.
+        "402":
+          description: Payment required when payment proof is enforced.
 components:
   schemas:
+    SinglePropertyRequest:
+      type: object
+      properties:
+        property:
+          $ref: "#/components/schemas/PropertyInput"
+        userPreferences:
+          $ref: "#/components/schemas/UserPreferences"
+      required:
+        - property
     CompareRequest:
       type: object
       required:

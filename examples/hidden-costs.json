@@ -1,0 +1,15 @@
+{
+  "property": {
+    "name": "Lekki Garden Bungalow",
+    "address": "Lekki Phase 1, Lagos, Nigeria",
+    "price": 70000,
+    "currency": "USD",
+    "bedrooms": 3,
+    "bathrooms": 3,
+    "sizeSqm": 145,
+    "condition": "good",
+    "estimatedHoaMonthly": 120,
+    "features": ["gated estate", "parking", "backup power"],
+    "notes": "Service charge is estimated and should be verified."
+  }
+}
