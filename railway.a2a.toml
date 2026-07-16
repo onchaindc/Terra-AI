@@ -1,0 +1,8 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.a2a"
+
+[deploy]
+startCommand = "bash /app/scripts/start-a2a-railway.sh"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
