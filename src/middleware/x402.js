@@ -20,6 +20,46 @@ function hasOkxConfig() {
   return requiredOkxEnv.every((key) => Boolean(process.env[key]));
 }
 
+function facilitatorTimeoutMs() {
+  const configured = Number(process.env.X402_FACILITATOR_TIMEOUT_MS);
+  return Number.isFinite(configured) && configured > 0 ? configured : 15000;
+}
+
+function withTimeout(operation, label) {
+  const timeoutMs = facilitatorTimeoutMs();
+  let timeoutId;
+
+  return Promise.race([
+    operation(),
+    new Promise((resolve, reject) => {
+      timeoutId = setTimeout(() => {
+        const error = new Error(
+          `OKX x402 facilitator ${label} timed out after ${timeoutMs}ms.`
+        );
+        error.name = "FacilitatorTimeoutError";
+        error.statusCode = 504;
+        reject(error);
+      }, timeoutMs);
+    })
+  ]).finally(() => clearTimeout(timeoutId));
+}
+
+function addFacilitatorTimeouts(client) {
+  return {
+    getSupported: () =>
+      withTimeout(() => client.getSupported(), "capability check"),
+    verify: (payload, requirements) =>
+      withTimeout(() => client.verify(payload, requirements), "verification"),
+    settle: (payload, requirements) =>
+      withTimeout(() => client.settle(payload, requirements), "settlement"),
+    getSettleStatus: (transactionHash) =>
+      withTimeout(
+        () => client.getSettleStatus(transactionHash),
+        "settlement status check"
+      )
+  };
+}
+
 function buildDemoPayment(req) {
   const headerName = (
     process.env.X402_PAYMENT_HEADER_NAME || "x-terra-payment-proof"
@@ -84,13 +124,15 @@ function buildOkxMiddleware() {
     maxTimeoutSeconds: Number(process.env.X402_MAX_TIMEOUT_SECONDS) || 60
   };
 
-  const facilitatorClient = new OKXFacilitatorClient({
-    apiKey: process.env.OKX_API_KEY,
-    secretKey: process.env.OKX_SECRET_KEY,
-    passphrase: process.env.OKX_PASSPHRASE,
-    baseUrl: process.env.OKX_BASE_URL || "https://www.okx.com",
-    syncSettle: process.env.X402_SYNC_SETTLE === "true"
-  });
+  const facilitatorClient = addFacilitatorTimeouts(
+    new OKXFacilitatorClient({
+      apiKey: process.env.OKX_API_KEY,
+      secretKey: process.env.OKX_SECRET_KEY,
+      passphrase: process.env.OKX_PASSPHRASE,
+      baseUrl: process.env.OKX_BASE_URL || "https://www.okx.com",
+      syncSettle: process.env.X402_SYNC_SETTLE === "true"
+    })
+  );
 
   const resourceServer = new x402ResourceServer(facilitatorClient).register(
     "eip155:*",
