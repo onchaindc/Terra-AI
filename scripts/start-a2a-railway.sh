@@ -32,6 +32,7 @@ inspect_agent_id="${TERRA_INSPECT_SERVICES_AGENT_ID:-}"
 
 if [[ -n "${inspect_agent_id}" ]]; then
   echo "[terra-a2a] Starting the responder before inspecting agent #${inspect_agent_id}."
+  okx-a2a daemon stop >/dev/null 2>&1 || true
   okx-a2a run --provider codex &
   responder_pid=$!
 
