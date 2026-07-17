@@ -8,7 +8,7 @@ RUN npm install -g \
     @okxweb3/a2a-node@0.1.9 \
     @openai/codex@latest
 
-RUN curl -fsSL https://web3.okx.com/onchainos/install.sh | sh \
+RUN curl -fsSL https://web3.okx.com/onchainos/download-cli | sh \
     && install -m 0755 /root/.local/bin/onchainos /usr/local/bin/onchainos \
     && onchainos --version \
     && okx-a2a --version \
