@@ -29,6 +29,54 @@ fi
 activate_agent_id="${TERRA_ACTIVATE_AGENT_ID:-}"
 activation_marker="/data/.terra-agent-${activate_agent_id}-activated"
 inspect_agent_id="${TERRA_INSPECT_SERVICES_AGENT_ID:-}"
+update_agent_id="${TERRA_UPDATE_LISTING_AGENT_ID:-}"
+update_services_b64="${TERRA_UPDATE_LISTING_SERVICES_B64:-}"
+update_marker="/data/.terra-agent-${update_agent_id}-listing-v2-updated"
+
+if [[ -n "${update_agent_id}" && -n "${update_services_b64}" && ! -f "${update_marker}" ]]; then
+  echo "[terra-a2a] Starting the responder before updating agent #${update_agent_id}."
+  okx-a2a daemon stop >/dev/null 2>&1 || true
+  okx-a2a run --provider codex &
+  responder_pid=$!
+
+  cleanup() {
+    kill "${responder_pid}" 2>/dev/null || true
+    wait "${responder_pid}" 2>/dev/null || true
+  }
+  trap cleanup EXIT INT TERM
+
+  ready=0
+  for _ in $(seq 1 60); do
+    if okx-a2a doctor --json 2>/dev/null | grep -q '"ready":true'; then
+      ready=1
+      break
+    fi
+    sleep 2
+  done
+
+  if [[ "${ready}" -ne 1 ]]; then
+    echo "[terra-a2a] The responder did not become ready for the listing update."
+    exit 1
+  fi
+
+  update_services="$(printf '%s' "${update_services_b64}" | base64 --decode)"
+  if update_output="$(
+    onchainos agent update \
+      --agent-id "${update_agent_id}" \
+      --service "${update_services}" 2>&1
+  )"; then
+    echo "[terra-a2a] ${update_output}"
+    touch "${update_marker}"
+    echo "[terra-a2a] Agent #${update_agent_id} listing update completed."
+  else
+    echo "[terra-a2a] Agent #${update_agent_id} listing update failed: ${update_output}"
+    exit 1
+  fi
+
+  trap - EXIT INT TERM
+  wait "${responder_pid}"
+  exit $?
+fi
 
 if [[ -n "${inspect_agent_id}" ]]; then
   echo "[terra-a2a] Starting the responder before inspecting agent #${inspect_agent_id}."
