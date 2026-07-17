@@ -141,9 +141,19 @@ function buildOkxMiddleware() {
 
   const middleware = paymentMiddleware(
     {
+      "GET /": {
+        accepts,
+        description: "Terra Compare property comparison report",
+        mimeType: "application/json"
+      },
       "POST /": {
         accepts,
         description: "Terra Compare property comparison report",
+        mimeType: "application/json"
+      },
+      "GET /hidden-costs": {
+        accepts,
+        description: "Terra Hidden Costs first-year property cost estimate",
         mimeType: "application/json"
       },
       "POST /hidden-costs": {
@@ -151,9 +161,19 @@ function buildOkxMiddleware() {
         description: "Terra Hidden Costs first-year property cost estimate",
         mimeType: "application/json"
       },
+      "GET /investment-check": {
+        accepts,
+        description: "Terra Investment Check property investment score",
+        mimeType: "application/json"
+      },
       "POST /investment-check": {
         accepts,
         description: "Terra Investment Check property investment score",
+        mimeType: "application/json"
+      },
+      "GET /buyer-fit": {
+        accepts,
+        description: "Terra Buyer Fit property preference score",
         mimeType: "application/json"
       },
       "POST /buyer-fit": {

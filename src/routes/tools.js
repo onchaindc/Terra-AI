@@ -21,7 +21,7 @@ function sendToolResponse(builder) {
   };
 }
 
-router.get("/hidden-costs", (req, res) => {
+router.get("/hidden-costs", x402Middleware, (req, res) => {
   res.json({
     service: "Terra Hidden Costs",
     method: "POST",
@@ -37,7 +37,7 @@ router.post(
   sendToolResponse(buildHiddenCostsReport)
 );
 
-router.get("/investment-check", (req, res) => {
+router.get("/investment-check", x402Middleware, (req, res) => {
   res.json({
     service: "Terra Investment Check",
     method: "POST",
@@ -55,7 +55,7 @@ router.post(
   )
 );
 
-router.get("/buyer-fit", (req, res) => {
+router.get("/buyer-fit", x402Middleware, (req, res) => {
   res.json({
     service: "Terra Buyer Fit",
     method: "POST",

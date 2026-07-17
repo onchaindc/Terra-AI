@@ -6,7 +6,7 @@ const { compareProperties } = require("../services/compareService");
 
 const router = express.Router();
 
-router.get("/", (req, res) => {
+router.get("/", x402Middleware, (req, res) => {
   res.json({
     service: process.env.TERRA_SERVICE_NAME || "Terra Compare",
     method: "POST",

@@ -39,9 +39,9 @@ function startFacilitatorStub() {
   });
 }
 
-function requestChallenge(server, path, payload) {
+function requestChallenge(server, method, path, payload) {
   const address = server.address();
-  const body = JSON.stringify(payload);
+  const body = method === "POST" ? JSON.stringify(payload) : "";
 
   return new Promise((resolve, reject) => {
     const request = http.request(
@@ -49,10 +49,10 @@ function requestChallenge(server, path, payload) {
         host: "127.0.0.1",
         port: address.port,
         path,
-        method: "POST",
+        method,
         headers: {
           "content-type": "application/json",
-          "content-length": Buffer.byteLength(body),
+          ...(body ? { "content-length": Buffer.byteLength(body) } : {}),
           host: "terra-ai.up.railway.app",
           "x-forwarded-proto": "https"
         }
@@ -123,42 +123,45 @@ test("x402 challenges use public HTTPS URLs behind Railway", async (t) => {
   ];
 
   for (const currentCase of cases) {
-    const response = await requestChallenge(
-      server,
-      currentCase.path,
-      currentCase.payload
-    );
-    assert.equal(response.statusCode, 402);
+    for (const method of ["GET", "POST"]) {
+      const response = await requestChallenge(
+        server,
+        method,
+        currentCase.path,
+        currentCase.payload
+      );
+      assert.equal(response.statusCode, 402);
 
-    const encodedChallenge = response.headers["payment-required"];
-    assert.ok(encodedChallenge);
+      const encodedChallenge = response.headers["payment-required"];
+      assert.ok(encodedChallenge);
 
-    const challenge = JSON.parse(
-      Buffer.from(encodedChallenge, "base64").toString("utf8")
-    );
-    const bodyChallenge = JSON.parse(response.body);
+      const challenge = JSON.parse(
+        Buffer.from(encodedChallenge, "base64").toString("utf8")
+      );
+      const bodyChallenge = JSON.parse(response.body);
 
-    assert.equal(isPaymentRequired(challenge), true);
-    assert.deepEqual(bodyChallenge, challenge);
-    assert.equal(response.headers["cache-control"], "no-store");
-    assert.equal(challenge.x402Version, 2);
-    assert.equal(challenge.error, "Payment required");
-    assert.equal(
-      challenge.resource.url,
-      `https://terra-ai.up.railway.app${currentCase.path}`
-    );
-    assert.equal(challenge.resource.mimeType, "application/json");
-    assert.equal(challenge.accepts.length, 1);
-    assert.equal(challenge.accepts[0].scheme, "exact");
-    assert.equal(challenge.accepts[0].network, "eip155:196");
-    assert.equal(challenge.accepts[0].amount, "500000");
-    assert.equal(
-      challenge.accepts[0].asset,
-      "0x779ded0c9e1022225f8e0630b35a9b54be713736"
-    );
-    assert.equal(
-      challenge.accepts[0].payTo,
-      "0x9873dd140c12ecbfe9fcf70c16dc7b94b649e0b4"
-    );
+      assert.equal(isPaymentRequired(challenge), true);
+      assert.deepEqual(bodyChallenge, challenge);
+      assert.equal(response.headers["cache-control"], "no-store");
+      assert.equal(challenge.x402Version, 2);
+      assert.equal(challenge.error, "Payment required");
+      assert.equal(
+        challenge.resource.url,
+        `https://terra-ai.up.railway.app${currentCase.path}`
+      );
+      assert.equal(challenge.resource.mimeType, "application/json");
+      assert.equal(challenge.accepts.length, 1);
+      assert.equal(challenge.accepts[0].scheme, "exact");
+      assert.equal(challenge.accepts[0].network, "eip155:196");
+      assert.equal(challenge.accepts[0].amount, "500000");
+      assert.equal(
+        challenge.accepts[0].asset,
+        "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+      );
+      assert.equal(
+        challenge.accepts[0].payTo,
+        "0x9873dd140c12ecbfe9fcf70c16dc7b94b649e0b4"
+      );
+    }
   }
 });
