@@ -1,6 +1,9 @@
 const assert = require("node:assert/strict");
 const http = require("node:http");
 const test = require("node:test");
+const {
+  isPaymentRequired
+} = require("@okxweb3/x402-core/schemas");
 
 function startFacilitatorStub() {
   return new Promise((resolve) => {
@@ -74,7 +77,10 @@ function requestChallenge(server, path, payload) {
 
 test("x402 challenges use public HTTPS URLs behind Railway", async (t) => {
   const facilitator = await startFacilitatorStub();
-  t.after(() => facilitator.close());
+  t.after(() => {
+    facilitator.closeAllConnections();
+    facilitator.close();
+  });
 
   process.env.X402_MODE = "okx";
   process.env.OKX_API_KEY = "test-api-key";
@@ -83,13 +89,16 @@ test("x402 challenges use public HTTPS URLs behind Railway", async (t) => {
   process.env.X402_PAY_TO_ADDRESS =
     "0x9873dd140c12ecbfe9fcf70c16dc7b94b649e0b4";
   process.env.X402_NETWORK = "eip155:196";
-  process.env.X402_PRICE = "$1";
+  process.env.X402_PRICE = "$0.50";
   process.env.OKX_BASE_URL = `http://127.0.0.1:${facilitator.address().port}`;
   process.env.X402_SYNC_FACILITATOR_ON_START = "true";
 
   const createApp = require("../src/app");
   const server = createApp().listen(0);
-  t.after(() => server.close());
+  t.after(() => {
+    server.closeAllConnections();
+    server.close();
+  });
 
   const cases = [
     {
@@ -127,10 +136,29 @@ test("x402 challenges use public HTTPS URLs behind Railway", async (t) => {
     const challenge = JSON.parse(
       Buffer.from(encodedChallenge, "base64").toString("utf8")
     );
+    const bodyChallenge = JSON.parse(response.body);
 
+    assert.equal(isPaymentRequired(challenge), true);
+    assert.deepEqual(bodyChallenge, challenge);
+    assert.equal(response.headers["cache-control"], "no-store");
+    assert.equal(challenge.x402Version, 2);
+    assert.equal(challenge.error, "Payment required");
     assert.equal(
       challenge.resource.url,
       `https://terra-ai.up.railway.app${currentCase.path}`
+    );
+    assert.equal(challenge.resource.mimeType, "application/json");
+    assert.equal(challenge.accepts.length, 1);
+    assert.equal(challenge.accepts[0].scheme, "exact");
+    assert.equal(challenge.accepts[0].network, "eip155:196");
+    assert.equal(challenge.accepts[0].amount, "500000");
+    assert.equal(
+      challenge.accepts[0].asset,
+      "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+    );
+    assert.equal(
+      challenge.accepts[0].payTo,
+      "0x9873dd140c12ecbfe9fcf70c16dc7b94b649e0b4"
     );
   }
 });
