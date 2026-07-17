@@ -28,6 +28,31 @@ fi
 
 activate_agent_id="${TERRA_ACTIVATE_AGENT_ID:-}"
 activation_marker="/data/.terra-agent-${activate_agent_id}-activated"
+inspect_agent_id="${TERRA_INSPECT_SERVICES_AGENT_ID:-}"
+
+if [[ -n "${inspect_agent_id}" ]]; then
+  echo "[terra-a2a] Starting the responder before inspecting agent #${inspect_agent_id}."
+  okx-a2a run --provider codex &
+  responder_pid=$!
+
+  cleanup() {
+    kill "${responder_pid}" 2>/dev/null || true
+    wait "${responder_pid}" 2>/dev/null || true
+  }
+  trap cleanup EXIT INT TERM
+
+  for _ in $(seq 1 60); do
+    if okx-a2a doctor --json 2>/dev/null | grep -q '"ready":true'; then
+      onchainos agent service-list --agent-id "${inspect_agent_id}"
+      wait "${responder_pid}"
+      exit $?
+    fi
+    sleep 2
+  done
+
+  echo "[terra-a2a] The responder did not become ready for inspection."
+  exit 1
+fi
 
 if [[ -n "${activate_agent_id}" && ! -f "${activation_marker}" ]]; then
   echo "[terra-a2a] Starting the responder before activating agent #${activate_agent_id}."
