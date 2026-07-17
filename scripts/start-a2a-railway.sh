@@ -81,7 +81,7 @@ fi
 if [[ -n "${inspect_agent_id}" ]]; then
   echo "[terra-a2a] Starting the responder before inspecting agent #${inspect_agent_id}."
   okx-a2a daemon stop >/dev/null 2>&1 || true
-  rm -f "${OKX_AGENT_TASK_HOME}/run/daemon.lock"
+  rm -rf -- "${OKX_AGENT_TASK_HOME}/run/daemon.lock"
   okx-a2a run --provider codex &
   responder_pid=$!
 
