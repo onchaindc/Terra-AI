@@ -9,14 +9,38 @@ const toolRoutes = require("./routes/tools");
 const productionUrl =
   process.env.TERRA_SERVICE_URL || "https://terra-ai.up.railway.app";
 
+function paymentMetadata() {
+  const mode = (process.env.X402_MODE || "demo").trim().toLowerCase();
+  const configuredPrice = process.env.X402_PRICE || "$0.50";
+  const fee = configuredPrice.replace(/^\$/, "");
+
+  if (mode === "okx") {
+    return {
+      mode: "x402",
+      fee: `${fee} USDT`,
+      network: process.env.X402_NETWORK || "eip155:196",
+      unpaidResponse: "HTTP 402 Payment Required",
+      paidResponse: "HTTP 200 JSON"
+    };
+  }
+
+  return {
+    mode,
+    fee: "0 USDT",
+    unpaidResponse: "HTTP 200 JSON"
+  };
+}
+
 function serviceMetadata() {
+  const pricing = paymentMetadata();
+
   return {
     service: "terra-ai",
     version: "1.1.0",
     type: "A2MCP",
     description:
       "AI property decision service for comparisons, hidden-cost estimates, investment checks, and buyer-fit analysis.",
-    pricing: { mode: "free", fee: "0 USDT" },
+    pricing,
     endpoints: {
       compare: { method: "POST", path: "/api/v1/compare" },
       hiddenCosts: { method: "POST", path: "/api/v1/hidden-costs" },
@@ -26,7 +50,10 @@ function serviceMetadata() {
       openapi: { method: "GET", path: "/api/a2mcp/openapi" }
     },
     inputMode: "structured_json",
-    responseMode: "HTTP 200 JSON"
+    responseMode:
+      pricing.mode === "x402"
+        ? "HTTP 402 challenge before payment; HTTP 200 JSON after payment"
+        : "HTTP 200 JSON"
   };
 }
 
@@ -65,8 +92,14 @@ function openApiDocument() {
     content: { "application/json": { schema } }
   });
   const responses = {
-    200: { description: "Structured Terra AI analysis." },
-    400: { description: "Structured validation error." }
+    200: {
+      description: "Structured Terra AI analysis after successful payment."
+    },
+    400: { description: "Structured validation error." },
+    402: {
+      description:
+        "Payment required. The PAYMENT-REQUIRED header and JSON body contain the x402 v2 challenge."
+    }
   };
 
   return {

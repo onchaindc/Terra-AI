@@ -32,7 +32,7 @@ async function main() {
   const metadata = await request("/api/a2mcp");
   assert.equal(metadata.response.status, 200);
   assert.equal(metadata.body.type, "A2MCP");
-  assert.equal(metadata.body.pricing.fee, "0 USDT");
+  assert.ok(metadata.body.pricing);
 
   const openapi = await request("/api/a2mcp/openapi");
   assert.equal(openapi.response.status, 200);
@@ -79,13 +79,35 @@ async function main() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(testCase.payload)
     });
-    assert.equal(
-      result.response.status,
-      200,
-      `${testCase.path} returned ${result.response.status}: ${JSON.stringify(result.body)}`
-    );
-    assert.equal(result.body.success, true);
-    assert.ok(result.body.data);
+    if (metadata.body.pricing.mode === "x402") {
+      assert.equal(
+        result.response.status,
+        402,
+        `${testCase.path} returned ${result.response.status}: ${JSON.stringify(result.body)}`
+      );
+
+      const encodedChallenge = result.response.headers.get("payment-required");
+      assert.ok(encodedChallenge, `${testCase.path} did not return PAYMENT-REQUIRED`);
+
+      const challenge = JSON.parse(
+        Buffer.from(encodedChallenge, "base64").toString("utf8")
+      );
+      assert.equal(challenge.x402Version, 2);
+      assert.equal(challenge.resource.url, `${baseUrl}${testCase.path}`);
+      assert.equal(challenge.accepts[0].scheme, "exact");
+      assert.equal(challenge.accepts[0].network, "eip155:196");
+      assert.equal(challenge.accepts[0].amount, "500000");
+      assert.equal(challenge.accepts[0].maxTimeoutSeconds, 300);
+      assert.deepEqual(result.body, challenge);
+    } else {
+      assert.equal(
+        result.response.status,
+        200,
+        `${testCase.path} returned ${result.response.status}: ${JSON.stringify(result.body)}`
+      );
+      assert.equal(result.body.success, true);
+      assert.ok(result.body.data);
+    }
   }
 
   console.log(
@@ -94,6 +116,7 @@ async function main() {
       baseUrl,
       metadata: "/api/a2mcp",
       openapi: "/api/a2mcp/openapi",
+      pricing: metadata.body.pricing,
       testedServices: cases.map((testCase) => testCase.path)
     })
   );
