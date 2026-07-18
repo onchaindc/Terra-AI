@@ -6,6 +6,146 @@ const morgan = require("morgan");
 const compareRoutes = require("./routes/compare");
 const toolRoutes = require("./routes/tools");
 
+const productionUrl =
+  process.env.TERRA_SERVICE_URL || "https://terra-ai.up.railway.app";
+
+function serviceMetadata() {
+  return {
+    service: "terra-ai",
+    version: "1.1.0",
+    type: "A2MCP",
+    description:
+      "AI property decision service for comparisons, hidden-cost estimates, investment checks, and buyer-fit analysis.",
+    pricing: { mode: "free", fee: "0 USDT" },
+    endpoints: {
+      compare: { method: "POST", path: "/api/v1/compare" },
+      hiddenCosts: { method: "POST", path: "/api/v1/hidden-costs" },
+      investmentCheck: { method: "POST", path: "/api/v1/investment-check" },
+      buyerFit: { method: "POST", path: "/api/v1/buyer-fit" },
+      health: { method: "GET", path: "/health" },
+      openapi: { method: "GET", path: "/api/a2mcp/openapi" }
+    },
+    inputMode: "structured_json",
+    responseMode: "HTTP 200 JSON"
+  };
+}
+
+function openApiDocument() {
+  const property = {
+    type: "object",
+    additionalProperties: true,
+    properties: {
+      name: { type: "string" },
+      address: { type: "string" },
+      url: { type: "string", format: "uri" },
+      price: { type: "number" },
+      currency: { type: "string", default: "USD" },
+      bedrooms: { type: "number" },
+      bathrooms: { type: "number" },
+      sizeSqm: { type: "number" },
+      condition: { type: "string" },
+      rentalYieldPercent: { type: "number" },
+      features: { type: "array", items: { type: "string" } },
+      notes: { type: "string" }
+    }
+  };
+  const preferences = {
+    type: "object",
+    additionalProperties: true,
+    properties: {
+      budget: { type: "number" },
+      currency: { type: "string", default: "USD" },
+      purpose: { type: "string" },
+      mustHaves: { type: "array", items: { type: "string" } },
+      dealBreakers: { type: "array", items: { type: "string" } }
+    }
+  };
+  const jsonRequest = (schema) => ({
+    required: true,
+    content: { "application/json": { schema } }
+  });
+  const responses = {
+    200: { description: "Structured Terra AI analysis." },
+    400: { description: "Structured validation error." }
+  };
+
+  return {
+    openapi: "3.1.0",
+    info: {
+      title: "Terra AI A2MCP API",
+      version: "1.1.0",
+      description: "Agent-consumable property decision services."
+    },
+    servers: [{ url: productionUrl }],
+    paths: {
+      "/api/a2mcp": {
+        get: {
+          summary: "A2MCP service metadata",
+          responses: { 200: { description: "Terra AI metadata." } }
+        }
+      },
+      "/api/v1/compare": {
+        post: {
+          summary: "Compare two to five properties",
+          requestBody: jsonRequest({
+            type: "object",
+            required: ["properties"],
+            properties: {
+              properties: {
+                type: "array",
+                minItems: 2,
+                maxItems: 5,
+                items: { oneOf: [{ type: "string" }, property] }
+              },
+              userPreferences: preferences
+            }
+          }),
+          responses
+        }
+      },
+      "/api/v1/hidden-costs": {
+        post: {
+          summary: "Estimate first-year hidden costs",
+          requestBody: jsonRequest({
+            type: "object",
+            required: ["property"],
+            properties: { property, userPreferences: preferences }
+          }),
+          responses
+        }
+      },
+      "/api/v1/investment-check": {
+        post: {
+          summary: "Score investment suitability",
+          requestBody: jsonRequest({
+            type: "object",
+            required: ["property"],
+            properties: { property, userPreferences: preferences }
+          }),
+          responses
+        }
+      },
+      "/api/v1/buyer-fit": {
+        post: {
+          summary: "Score buyer fit",
+          requestBody: jsonRequest({
+            type: "object",
+            required: ["property"],
+            properties: { property, userPreferences: preferences }
+          }),
+          responses
+        }
+      },
+      "/health": {
+        get: {
+          summary: "Runtime health",
+          responses: { 200: { description: "Service is ready." } }
+        }
+      }
+    }
+  };
+}
+
 function createApp() {
   const app = express();
 
@@ -32,6 +172,14 @@ function createApp() {
         buyerFit: "/api/v1/buyer-fit"
       }
     });
+  });
+
+  app.get("/api/a2mcp", (req, res) => {
+    res.set("Cache-Control", "no-store").json(serviceMetadata());
+  });
+
+  app.get("/api/a2mcp/openapi", (req, res) => {
+    res.set("Cache-Control", "no-store").json(openApiDocument());
   });
 
   app.get("/health", (req, res) => {
