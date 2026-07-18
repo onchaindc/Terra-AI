@@ -27,7 +27,8 @@ if [[ "${missing_auth}" -eq 1 ]]; then
 fi
 
 activate_agent_id="${TERRA_ACTIVATE_AGENT_ID:-}"
-activation_marker="/data/.terra-agent-${activate_agent_id}-activated"
+activation_nonce="${TERRA_ACTIVATION_NONCE:-}"
+activation_marker="/data/.terra-agent-${activate_agent_id}${activation_nonce:+-${activation_nonce}}-activated"
 inspect_agent_id="${TERRA_INSPECT_SERVICES_AGENT_ID:-}"
 update_agent_id="${TERRA_UPDATE_LISTING_AGENT_ID:-}"
 update_services_b64="${TERRA_UPDATE_LISTING_SERVICES_B64:-}"
