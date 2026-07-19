@@ -189,34 +189,6 @@ function buildOkxMiddleware() {
   );
 
   return async (req, res, next) => {
-    const sendJson = res.json.bind(res);
-
-    res.json = (body) => {
-      const encodedChallenge = res.getHeader("PAYMENT-REQUIRED");
-      const isEmptyChallengeBody =
-        res.statusCode === 402 &&
-        encodedChallenge &&
-        body &&
-        typeof body === "object" &&
-        !Array.isArray(body) &&
-        Object.keys(body).length === 0;
-
-      if (isEmptyChallengeBody) {
-        try {
-          const challenge = JSON.parse(
-            Buffer.from(String(encodedChallenge), "base64").toString("utf8")
-          );
-
-          res.setHeader("Cache-Control", "no-store");
-          return sendJson(challenge);
-        } catch (error) {
-          return next(error);
-        }
-      }
-
-      return sendJson(body);
-    };
-
     req.payment = {
       protocol: "x402",
       mode: "okx",

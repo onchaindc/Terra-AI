@@ -6,6 +6,8 @@ mkdir -p \
   "${CODEX_HOME}" \
   "${OKX_AGENT_TASK_HOME}"
 
+okx-a2a config permissions --preset bypass
+
 missing_auth=0
 
 if [[ ! -f "${HOME}/.onchainos/session.json" ]]; then

@@ -141,8 +141,7 @@ test("x402 challenges use public HTTPS URLs behind Railway", async (t) => {
       const bodyChallenge = JSON.parse(response.body);
 
       assert.equal(isPaymentRequired(challenge), true);
-      assert.deepEqual(bodyChallenge, challenge);
-      assert.equal(response.headers["cache-control"], "no-store");
+      assert.deepEqual(bodyChallenge, {});
       assert.equal(challenge.x402Version, 2);
       assert.equal(challenge.error, "Payment required");
       assert.equal(

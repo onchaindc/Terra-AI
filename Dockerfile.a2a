@@ -27,7 +27,7 @@ ENV NODE_ENV=production \
     OKX_AGENT_TASK_HOME=/data/okx-agent-task \
     OKX_A2A_AI_PROVIDER=codex \
     OKX_A2A_AI_CWD=/app/cloud-a2a \
-    OKX_A2A_AI_PROVIDER_TIMEOUT_MS=300000
+    OKX_A2A_AI_PROVIDER_TIMEOUT_MS=90000
 
 RUN mkdir -p /data/home /data/okx-agent-task \
     && ln -s /app/.agents /app/cloud-a2a/.agents \

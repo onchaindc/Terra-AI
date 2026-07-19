@@ -98,7 +98,7 @@ async function main() {
       assert.equal(challenge.accepts[0].network, "eip155:196");
       assert.equal(challenge.accepts[0].amount, "500000");
       assert.equal(challenge.accepts[0].maxTimeoutSeconds, 300);
-      assert.deepEqual(result.body, challenge);
+      assert.deepEqual(result.body, {});
     } else {
       assert.equal(
         result.response.status,
