@@ -31,6 +31,11 @@ if [[ "${missing_auth}" -eq 1 ]]; then
   exec sleep infinity
 fi
 
+# The task home lives on a persistent Railway volume. A container replacement
+# can leave its old daemon lock behind even though the old process is gone.
+okx-a2a daemon stop >/dev/null 2>&1 || true
+rm -f -- "${OKX_AGENT_TASK_HOME}/run/daemon.lock"
+
 activate_agent_id="${TERRA_ACTIVATE_AGENT_ID:-}"
 activation_nonce="${TERRA_ACTIVATION_NONCE:-}"
 activation_marker="/data/.terra-agent-${activate_agent_id}${activation_nonce:+-${activation_nonce}}-activated"
