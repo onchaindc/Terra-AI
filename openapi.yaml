@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Terra Compare API
-  version: 1.0.0
+  version: 1.1.0
   summary: A2MCP property comparison service for Terra AI.
   description: >
     Terra Compare accepts 2 to 5 real estate options plus user preferences,
@@ -20,24 +20,11 @@ paths:
         "200":
           description: Service is available.
   /api/v1/compare:
-    get:
-      summary: Compare endpoint metadata
-      responses:
-        "200":
-          description: Explains how to call the compare endpoint.
     post:
       summary: Compare 2 to 5 properties
       description: >
-        Generates a structured property comparison report. The MVP accepts the
-        x-terra-payment-proof header in demo mode. Set X402_MODE=okx with OKX
-        credentials to enforce real x402 payment verification.
-      parameters:
-        - in: header
-          name: x-terra-payment-proof
-          required: false
-          schema:
-            type: string
-          description: MVP x402 payment proof header.
+        Generates a structured property comparison report after OKX x402
+        payment verification.
       requestBody:
         required: true
         content:
@@ -50,15 +37,14 @@ paths:
         "400":
           description: Invalid request payload.
         "402":
-          description: Payment required when payment proof is enforced.
-        "501":
-          description: Payment mode is not available or not configured.
+          description: Payment required. The base64-encoded x402 v2 challenge is in the PAYMENT-REQUIRED response header.
+          headers:
+            PAYMENT-REQUIRED:
+              required: true
+              schema:
+                type: string
+              description: Base64-encoded x402 v2 payment challenge.
   /api/v1/hidden-costs:
-    get:
-      summary: Hidden costs endpoint metadata
-      responses:
-        "200":
-          description: Explains how to call the hidden costs endpoint.
     post:
       summary: Estimate hidden costs for one property
       description: >
@@ -77,13 +63,14 @@ paths:
         "400":
           description: Invalid request payload.
         "402":
-          description: Payment required when payment proof is enforced.
+          description: Payment required. The base64-encoded x402 v2 challenge is in the PAYMENT-REQUIRED response header.
+          headers:
+            PAYMENT-REQUIRED:
+              required: true
+              schema:
+                type: string
+              description: Base64-encoded x402 v2 payment challenge.
   /api/v1/investment-check:
-    get:
-      summary: Investment check endpoint metadata
-      responses:
-        "200":
-          description: Explains how to call the investment check endpoint.
     post:
       summary: Score one property for investment fit
       description: >
@@ -102,13 +89,14 @@ paths:
         "400":
           description: Invalid request payload.
         "402":
-          description: Payment required when payment proof is enforced.
+          description: Payment required. The base64-encoded x402 v2 challenge is in the PAYMENT-REQUIRED response header.
+          headers:
+            PAYMENT-REQUIRED:
+              required: true
+              schema:
+                type: string
+              description: Base64-encoded x402 v2 payment challenge.
   /api/v1/buyer-fit:
-    get:
-      summary: Buyer fit endpoint metadata
-      responses:
-        "200":
-          description: Explains how to call the buyer fit endpoint.
     post:
       summary: Score one property against buyer preferences
       description: >
@@ -126,7 +114,13 @@ paths:
         "400":
           description: Invalid request payload.
         "402":
-          description: Payment required when payment proof is enforced.
+          description: Payment required. The base64-encoded x402 v2 challenge is in the PAYMENT-REQUIRED response header.
+          headers:
+            PAYMENT-REQUIRED:
+              required: true
+              schema:
+                type: string
+              description: Base64-encoded x402 v2 payment challenge.
 components:
   schemas:
     SinglePropertyRequest:

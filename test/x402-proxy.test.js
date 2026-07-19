@@ -7,11 +7,13 @@ const {
 
 function startFacilitatorStub() {
   return new Promise((resolve) => {
+    let supportedCalls = 0;
     const server = http.createServer((request, response) => {
       if (
         request.method === "GET" &&
         request.url === "/api/v6/pay/x402/supported"
       ) {
+        supportedCalls += 1;
         response.setHeader("content-type", "application/json");
         response.end(
           JSON.stringify({
@@ -35,6 +37,7 @@ function startFacilitatorStub() {
       response.end();
     });
 
+    server.getSupportedCalls = () => supportedCalls;
     server.listen(0, "127.0.0.1", () => resolve(server));
   });
 }
@@ -91,9 +94,14 @@ test("x402 challenges use public HTTPS URLs behind Railway", async (t) => {
   process.env.X402_NETWORK = "eip155:196";
   process.env.X402_PRICE = "$0.50";
   process.env.OKX_BASE_URL = `http://127.0.0.1:${facilitator.address().port}`;
-  process.env.X402_SYNC_FACILITATOR_ON_START = "true";
 
+  const x402Middleware = require("../src/middleware/x402");
   const createApp = require("../src/app");
+  await x402Middleware.initializeX402();
+
+  assert.equal(x402Middleware.getX402Status().ready, true);
+  assert.equal(facilitator.getSupportedCalls(), 1);
+
   const server = createApp().listen(0);
   t.after(() => {
     server.closeAllConnections();
@@ -163,4 +171,6 @@ test("x402 challenges use public HTTPS URLs behind Railway", async (t) => {
       );
     }
   }
+
+  assert.equal(facilitator.getSupportedCalls(), 1);
 });

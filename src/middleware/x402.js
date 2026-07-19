@@ -112,7 +112,7 @@ function missingConfigMiddleware(req, res) {
   });
 }
 
-function buildOkxMiddleware() {
+function buildOkxRuntime() {
   const network = process.env.X402_NETWORK || "eip155:196";
   const price = process.env.X402_PRICE || "$0.01";
   const payTo = process.env.X402_PAY_TO_ADDRESS;
@@ -185,41 +185,91 @@ function buildOkxMiddleware() {
     resourceServer,
     undefined,
     undefined,
-    process.env.X402_SYNC_FACILITATOR_ON_START !== "false"
+    false
   );
 
-  return async (req, res, next) => {
-    req.payment = {
-      protocol: "x402",
-      mode: "okx",
-      status: "verification_required",
-      accepted: false,
-      verified: false,
-      network,
-      price
-    };
-
-    await middleware(req, res, (error) => {
-      if (error) return next(error);
-
+  return {
+    middleware: async (req, res, next) => {
       req.payment = {
         protocol: "x402",
         mode: "okx",
-        status: "verified",
-        accepted: true,
-        verified: true,
+        status: "verification_required",
+        accepted: false,
+        verified: false,
         network,
         price
       };
 
-      next();
-    });
+      await middleware(req, res, (error) => {
+        if (error) return next(error);
+
+        req.payment = {
+          protocol: "x402",
+          mode: "okx",
+          status: "verified",
+          accepted: true,
+          verified: true,
+          network,
+          price
+        };
+
+        next();
+      });
+    },
+    resourceServer,
+    network,
+    price
   };
 }
 
-let okxMiddleware = null;
+let okxRuntime = null;
 
-function x402Middleware(req, res, next) {
+async function initializeX402() {
+  const mode = readMode();
+
+  if (mode !== "okx") {
+    return;
+  }
+
+  if (!hasOkxConfig()) {
+    throw new Error(
+      "X402_MODE=okx is enabled, but required OKX x402 environment variables are missing."
+    );
+  }
+
+  if (!okxRuntime) {
+    okxRuntime = buildOkxRuntime();
+  }
+
+  if (!okxRuntime.initialization) {
+    okxRuntime.initialization = okxRuntime.resourceServer
+      .initialize()
+      .then(() => {
+        okxRuntime.ready = true;
+      })
+      .catch((error) => {
+        okxRuntime.initialization = null;
+        okxRuntime.ready = false;
+        throw error;
+      });
+  }
+
+  await okxRuntime.initialization;
+}
+
+function getX402Status() {
+  const mode = readMode();
+
+  return {
+    mode,
+    configured: mode !== "okx" || hasOkxConfig(),
+    ready: mode !== "okx" || Boolean(okxRuntime?.ready),
+    network: mode === "okx" ? process.env.X402_NETWORK || "eip155:196" : null,
+    price: mode === "okx" ? process.env.X402_PRICE || "$0.01" : null
+  };
+}
+
+async function x402Middleware(req, res, next) {
   const mode = readMode();
 
   if (mode === "off") {
@@ -242,11 +292,13 @@ function x402Middleware(req, res, next) {
       return missingConfigMiddleware(req, res);
     }
 
-    if (!okxMiddleware) {
-      okxMiddleware = buildOkxMiddleware();
+    try {
+      await initializeX402();
+    } catch (error) {
+      return next(error);
     }
 
-    return okxMiddleware(req, res, next);
+    return okxRuntime.middleware(req, res, next);
   }
 
   return res.status(500).json({
@@ -255,5 +307,8 @@ function x402Middleware(req, res, next) {
     message: `Unsupported X402_MODE: ${mode}. Use demo, okx, or off.`
   });
 }
+
+x402Middleware.initializeX402 = initializeX402;
+x402Middleware.getX402Status = getX402Status;
 
 module.exports = x402Middleware;

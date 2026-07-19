@@ -19,7 +19,7 @@ router.get("/", x402Middleware, (req, res) => {
     notes: [
       "This MVP accepts rich property objects or plain strings/links.",
       "Richer property details produce much better recommendations.",
-      "x402 is isolated in middleware and can be replaced later with real verification."
+      "Production requests are verified and settled through the OKX x402 middleware."
     ]
   });
 });

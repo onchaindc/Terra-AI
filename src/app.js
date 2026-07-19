@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const x402Middleware = require("./middleware/x402");
 
 const compareRoutes = require("./routes/compare");
 const toolRoutes = require("./routes/tools");
@@ -12,7 +13,9 @@ const productionUrl =
 function paymentMetadata() {
   const mode = (process.env.X402_MODE || "demo").trim().toLowerCase();
   const configuredPrice = process.env.X402_PRICE || "$0.50";
-  const fee = configuredPrice.replace(/^\$/, "");
+  const feeText = configuredPrice.replace(/^\$/, "");
+  const feeNumber = Number(feeText);
+  const fee = Number.isFinite(feeNumber) ? feeNumber.toFixed(2) : feeText;
 
   if (mode === "okx") {
     return {
@@ -98,7 +101,14 @@ function openApiDocument() {
     400: { description: "Structured validation error." },
     402: {
       description:
-        "Payment required. The PAYMENT-REQUIRED header and JSON body contain the x402 v2 challenge."
+        "Payment required. The base64-encoded x402 v2 challenge is returned in the PAYMENT-REQUIRED response header; the response body may be empty.",
+      headers: {
+        "PAYMENT-REQUIRED": {
+          description:
+            "Base64-encoded x402 v2 payment challenge containing the accepted network, asset, amount, and pay-to address.",
+          schema: { type: "string" }
+        }
+      }
     }
   };
 
@@ -220,6 +230,7 @@ function createApp() {
       ok: true,
       service: process.env.TERRA_SERVICE_NAME || "Terra Compare",
       environment: process.env.NODE_ENV || "development",
+      payment: x402Middleware.getX402Status(),
       timestamp: new Date().toISOString()
     });
   });
