@@ -4,6 +4,7 @@ const {
   buildReply,
   buildSendArgs,
   extractPeerAgentId,
+  providerHealth,
   runResponder
 } = require("../src/a2a/responder");
 
@@ -93,4 +94,24 @@ test("Terra A2A responder sends before emitting a valid Codex session", () => {
   assert.equal(result.delivery.sent, true);
   assert.equal(result.events[0].type, "thread.started");
   assert.equal(result.events[1].item.type, "agent_message");
+});
+
+test("Terra A2A provider health confirms the custom adapter configuration", () => {
+  assert.deepEqual(
+    providerHealth({
+      OKX_A2A_AI_CODEX_COMMAND: "/usr/local/bin/node",
+      OKX_A2A_AI_CODEX_EXEC_ARGS_JSON: "[configured]",
+      OKX_A2A_AI_CODEX_RESUME_ARGS_JSON: "[configured]",
+      OKX_AGENT_TASK_HOME: "/data/okx-agent-task"
+    }),
+    {
+      ok: true,
+      service: "Terra AI A2A responder",
+      agentId: "5105",
+      providerCommand: "/usr/local/bin/node",
+      execArgsConfigured: true,
+      resumeArgsConfigured: true,
+      taskHome: "/data/okx-agent-task"
+    }
+  );
 });

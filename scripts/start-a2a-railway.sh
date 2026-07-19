@@ -6,6 +6,15 @@ mkdir -p \
   "${CODEX_HOME}" \
   "${OKX_AGENT_TASK_HOME}"
 
+node /app/scripts/a2a-health-server.js &
+health_pid=$!
+
+cleanup_health() {
+  kill "${health_pid}" 2>/dev/null || true
+  wait "${health_pid}" 2>/dev/null || true
+}
+trap cleanup_health EXIT INT TERM
+
 okx-a2a config permissions --preset bypass
 
 missing_auth=0

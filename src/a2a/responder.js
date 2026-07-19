@@ -277,12 +277,25 @@ function runResponder({
   };
 }
 
+function providerHealth(env = process.env) {
+  return {
+    ok: true,
+    service: "Terra AI A2A responder",
+    agentId: "5105",
+    providerCommand: env.OKX_A2A_AI_CODEX_COMMAND || null,
+    execArgsConfigured: Boolean(env.OKX_A2A_AI_CODEX_EXEC_ARGS_JSON),
+    resumeArgsConfigured: Boolean(env.OKX_A2A_AI_CODEX_RESUME_ARGS_JSON),
+    taskHome: env.OKX_AGENT_TASK_HOME || null
+  };
+}
+
 module.exports = {
   SERVICE_MENU,
   buildReply,
   buildSendArgs,
   extractPeerAgentId,
   parseCanonicalSessionKey,
+  providerHealth,
   runResponder,
   sendReply,
   stableId
