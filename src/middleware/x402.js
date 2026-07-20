@@ -13,7 +13,9 @@ const requiredOkxEnv = [
 ];
 
 function readMode() {
-  return (process.env.X402_MODE || "demo").trim().toLowerCase();
+  const fallbackMode =
+    process.env.NODE_ENV === "production" ? "okx" : "off";
+  return (process.env.X402_MODE || fallbackMode).trim().toLowerCase();
 }
 
 function hasOkxConfig() {
@@ -114,14 +116,14 @@ function missingConfigMiddleware(req, res) {
 
 function buildOkxRuntime() {
   const network = process.env.X402_NETWORK || "eip155:196";
-  const price = process.env.X402_PRICE || "$0.01";
+  const price = process.env.X402_PRICE || "$0.50";
   const payTo = process.env.X402_PAY_TO_ADDRESS;
   const accepts = {
     scheme: "exact",
     network,
     payTo,
     price,
-    maxTimeoutSeconds: Number(process.env.X402_MAX_TIMEOUT_SECONDS) || 60
+    maxTimeoutSeconds: Number(process.env.X402_MAX_TIMEOUT_SECONDS) || 300
   };
 
   const facilitatorClient = addFacilitatorTimeouts(
@@ -265,7 +267,7 @@ function getX402Status() {
     configured: mode !== "okx" || hasOkxConfig(),
     ready: mode !== "okx" || Boolean(okxRuntime?.ready),
     network: mode === "okx" ? process.env.X402_NETWORK || "eip155:196" : null,
-    price: mode === "okx" ? process.env.X402_PRICE || "$0.01" : null
+    price: mode === "okx" ? process.env.X402_PRICE || "$0.50" : null
   };
 }
 

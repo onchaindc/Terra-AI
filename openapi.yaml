@@ -6,7 +6,16 @@ info:
   description: >
     Terra Compare accepts 2 to 5 real estate options plus user preferences,
     then returns a structured side-by-side comparison, hidden-cost estimate,
-    ranking, and final recommendation.
+    ranking, and final recommendation. Each production API call costs
+    0.5 USDT through OKX x402 on X Layer mainnet.
+  x-okx-payment:
+    protocol: x402
+    version: 2
+    price: "0.5"
+    currency: USDT
+    network: eip155:196
+    asset: "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+    payTo: "0x9873dd140c12ecbfe9fcf70c16dc7b94b649e0b4"
 servers:
   - url: https://terra-ai.up.railway.app
     description: Production
@@ -37,7 +46,7 @@ paths:
         "400":
           description: Invalid request payload.
         "402":
-          description: Payment required. The base64-encoded x402 v2 challenge is in the PAYMENT-REQUIRED response header.
+          description: A 0.5 USDT payment is required on X Layer. The base64-encoded x402 v2 challenge is in the PAYMENT-REQUIRED response header.
           headers:
             PAYMENT-REQUIRED:
               required: true
@@ -63,7 +72,7 @@ paths:
         "400":
           description: Invalid request payload.
         "402":
-          description: Payment required. The base64-encoded x402 v2 challenge is in the PAYMENT-REQUIRED response header.
+          description: A 0.5 USDT payment is required on X Layer. The base64-encoded x402 v2 challenge is in the PAYMENT-REQUIRED response header.
           headers:
             PAYMENT-REQUIRED:
               required: true
@@ -89,7 +98,7 @@ paths:
         "400":
           description: Invalid request payload.
         "402":
-          description: Payment required. The base64-encoded x402 v2 challenge is in the PAYMENT-REQUIRED response header.
+          description: A 0.5 USDT payment is required on X Layer. The base64-encoded x402 v2 challenge is in the PAYMENT-REQUIRED response header.
           headers:
             PAYMENT-REQUIRED:
               required: true
@@ -114,7 +123,7 @@ paths:
         "400":
           description: Invalid request payload.
         "402":
-          description: Payment required. The base64-encoded x402 v2 challenge is in the PAYMENT-REQUIRED response header.
+          description: A 0.5 USDT payment is required on X Layer. The base64-encoded x402 v2 challenge is in the PAYMENT-REQUIRED response header.
           headers:
             PAYMENT-REQUIRED:
               required: true

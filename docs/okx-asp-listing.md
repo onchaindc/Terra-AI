@@ -60,26 +60,30 @@ The service returns:
 - confidence labels
 - markdown report
 
-## Pricing Model
+## Live Pricing
 
-Suggested MVP price: a small fixed pay-per-call fee per comparison request.
+All four Terra AI A2MCP services use the live OKX.AI listing price:
 
-Recommended first test price:
-
-- `0.01 USDC` per comparison call
-- or the OKX.AI/x402 marketplace minimum if a required minimum exists
+- `0.5 USDT` per API call
+- X Layer mainnet (`eip155:196`)
+- x402 asset: `0x779ded0c9e1022225f8e0630b35a9b54be713736`
+- payout address: `0x9873dd140c12ecbfe9fcf70c16dc7b94b649e0b4`
 
 ## x402 Payment Status
 
-The service has a configurable x402 middleware layer.
+Production uses the OKX Payment SDK and standard x402 v2 middleware.
 
 Current production settings:
 
-- `X402_MODE=demo`
-- `X402_REQUIRE_HEADER=false`
-- `X402_PAYMENT_HEADER_NAME=x-terra-payment-proof`
+- `X402_MODE=okx`
+- `X402_NETWORK=eip155:196`
+- `X402_PRICE=$0.50`
+- `X402_SYNC_SETTLE=true`
+- unpaid requests return `HTTP 402` with `PAYMENT-REQUIRED`
+- successfully paid requests return `HTTP 200` with the requested analysis
 
-Real OKX x402 enforcement is supported by setting `X402_MODE=okx` and configuring `OKX_API_KEY`, `OKX_SECRET_KEY`, `OKX_PASSPHRASE`, `X402_PAY_TO_ADDRESS`, `X402_NETWORK`, and `X402_PRICE`.
+The production listing does not use the legacy demo header or any draft
+pricing configuration.
 
 ## Data Accuracy Status
 
@@ -98,6 +102,7 @@ This matters because property decisions are high-stakes and messy. Listings do n
 - Compare endpoint accepts sample payloads.
 - OpenAPI spec is present.
 - Example request is present.
-- x402 middleware is isolated.
+- All four endpoints return a standard unpaid x402 challenge.
+- A paid marketplace request settles on X Layer and returns analysis.
 - Demo video is 90 seconds or less.
 - X launch post includes `#OKXAI`.

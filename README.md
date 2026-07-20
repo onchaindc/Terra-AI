@@ -33,7 +33,7 @@ Terra AI is not limited to one country or city. The API accepts structured detai
 - Buyer-fit scoring against must-haves and deal-breakers
 - Weighted scoring and ranking
 - Clear final recommendation
-- Configurable payment mode: demo, off, or real OKX x402 when credentials are provided
+- Production OKX x402 enforcement at 0.5 USDT per call on X Layer mainnet
 - Data-quality metadata that explains whether results are based on supplied input, heuristics, or live feeds
 
 ## Current accuracy model
@@ -47,15 +47,19 @@ That means:
 - hidden costs are estimates, not verified local legal/tax/inspection advice
 - every response includes `dataQuality` and per-property `confidence` metadata
 
-## Payment mode
+## Production payment contract
 
-The service supports three modes through `X402_MODE`:
+All four live A2MCP endpoints use the same payment contract:
 
-- `demo`: accepts calls for testing and marks payment as unverified
-- `okx`: uses OKX x402 middleware and requires OKX credentials plus a payout wallet
-- `off`: disables payment checks
+- Mode: `X402_MODE=okx`
+- Price: `0.5 USDT` per call
+- Network: X Layer mainnet (`eip155:196`)
+- Payment asset: `0x779ded0c9e1022225f8e0630b35a9b54be713736`
+- Payout address: `0x9873dd140c12ecbfe9fcf70c16dc7b94b649e0b4`
+- Unpaid response: `HTTP 402 Payment Required` with a standard `PAYMENT-REQUIRED` x402 v2 challenge
+- Paid response: `HTTP 200` with the requested property analysis
 
-To enable real OKX x402 payment verification, set `X402_MODE=okx` and configure:
+Production requires:
 
 - `OKX_API_KEY`
 - `OKX_SECRET_KEY`
@@ -63,6 +67,10 @@ To enable real OKX x402 payment verification, set `X402_MODE=okx` and configure:
 - `X402_PAY_TO_ADDRESS`
 - `X402_NETWORK`
 - `X402_PRICE`
+- `X402_SYNC_SETTLE=true`
+
+`demo` and `off` remain available only as explicit local-development overrides.
+They are not the production or OKX.AI listing configuration.
 
 ## Example scenarios
 

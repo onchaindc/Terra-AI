@@ -11,7 +11,9 @@ const productionUrl =
   process.env.TERRA_SERVICE_URL || "https://terra-ai.up.railway.app";
 
 function paymentMetadata() {
-  const mode = (process.env.X402_MODE || "demo").trim().toLowerCase();
+  const fallbackMode =
+    process.env.NODE_ENV === "production" ? "okx" : "off";
+  const mode = (process.env.X402_MODE || fallbackMode).trim().toLowerCase();
   const configuredPrice = process.env.X402_PRICE || "$0.50";
   const feeText = configuredPrice.replace(/^\$/, "");
   const feeNumber = Number(feeText);

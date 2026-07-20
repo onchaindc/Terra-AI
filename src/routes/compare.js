@@ -13,7 +13,7 @@ router.get("/", x402Middleware, (req, res) => {
     endpoint: "/api/v1/compare",
     supports: {
       propertiesPerRequest: "2 to 5",
-      paymentProtocol: "x402 (demo or OKX-enforced mode)",
+      paymentProtocol: "OKX x402 v2 on X Layer",
       output: ["json", "markdown"]
     },
     notes: [

@@ -34,7 +34,7 @@ Category:
 
 Pricing:
 
-`0.01 USDC per comparison call` or the minimum supported OKX.AI marketplace price.
+`0.5 USDT per API call` on X Layer mainnet.
 
 Interface URL:
 
@@ -48,13 +48,24 @@ Headers:
 
 `Content-Type: application/json`
 
-Optional MVP payment header:
+Unpaid response:
 
-`x-terra-payment-proof: demo`
+`HTTP 402 Payment Required` with the standard x402 v2 challenge in the
+`PAYMENT-REQUIRED` response header.
 
-Real payment mode:
+Paid response:
 
-Set `X402_MODE=okx` in Railway and add the OKX x402 credentials plus payout address before presenting the service as payment-verified.
+`HTTP 200` with the requested property analysis after OKX payment
+authorization and settlement.
+
+Production payment configuration:
+
+- `X402_MODE=okx`
+- `X402_NETWORK=eip155:196`
+- `X402_PRICE=$0.50`
+- `X402_PAY_TO_ADDRESS=0x9873dd140c12ecbfe9fcf70c16dc7b94b649e0b4`
+- `X402_SYNC_SETTLE=true`
+- payment asset: `0x779ded0c9e1022225f8e0630b35a9b54be713736`
 
 Required env vars:
 
@@ -64,6 +75,7 @@ Required env vars:
 - `X402_PAY_TO_ADDRESS`
 - `X402_NETWORK`
 - `X402_PRICE`
+- `X402_SYNC_SETTLE`
 
 ## Data Accuracy Disclosure
 
