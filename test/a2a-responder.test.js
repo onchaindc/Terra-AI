@@ -3,6 +3,7 @@ const test = require("node:test");
 const {
   buildReply,
   buildSendArgs,
+  checkReplyEligibility,
   extractPeerAgentId,
   providerHealth,
   runResponder
@@ -94,6 +95,71 @@ test("Terra A2A responder sends before emitting a valid Codex session", () => {
   assert.equal(result.delivery.sent, true);
   assert.equal(result.events[0].type, "thread.started");
   assert.equal(result.events[1].item.type, "agent_message");
+});
+
+test("Terra A2A responder ignores messages dispatched for another local agent", () => {
+  assert.deepEqual(
+    checkReplyEligibility(
+      {
+        OKX_A2A_CURRENT_SESSION_KEY: "job:job-123:my:6782:to:5105",
+        OKX_A2A_CURRENT_AGENT_ID: "6782"
+      },
+      JSON.stringify({
+        sender: {
+          agentId: "5105"
+        }
+      })
+    ),
+    {
+      eligible: false,
+      reason: "current_agent_is_not_terra:6782"
+    }
+  );
+});
+
+test("Terra A2A responder does not answer messages sent by Terra itself", () => {
+  assert.deepEqual(
+    checkReplyEligibility(
+      {
+        OKX_A2A_CURRENT_SESSION_KEY: "job:job-123:my:5105:to:5105",
+        OKX_A2A_CURRENT_AGENT_ID: "5105"
+      },
+      JSON.stringify({
+        sender: {
+          agentId: "5105"
+        }
+      })
+    ),
+    {
+      eligible: false,
+      reason: "sender_is_terra"
+    }
+  );
+});
+
+test("Terra A2A responder skips XMTP delivery when the current agent is tester", () => {
+  let spawned = false;
+  const result = runResponder({
+    prompt: JSON.stringify({
+      sender: {
+        agentId: "5105"
+      }
+    }),
+    env: {
+      OKX_A2A_CURRENT_SESSION_KEY: "job:job-123:my:6782:to:5105",
+      OKX_A2A_CURRENT_AGENT_ID: "6782"
+    },
+    spawn() {
+      spawned = true;
+      throw new Error("spawn should not run");
+    }
+  });
+
+  assert.equal(spawned, false);
+  assert.deepEqual(result.delivery, {
+    sent: false,
+    reason: "current_agent_is_not_terra:6782"
+  });
 });
 
 test("Terra A2A provider health confirms the custom adapter configuration", () => {

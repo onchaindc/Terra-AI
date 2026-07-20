@@ -13,6 +13,8 @@ const SERVICE_MENU = [
   "Reply with the service name or number and the property details you already have."
 ].join("\n");
 
+const TERRA_AGENT_ID = "5105";
+
 function stableId(value, prefix) {
   const digest = createHash("sha256")
     .update(String(value || "terra-ai"))
@@ -185,7 +187,40 @@ function buildSendArgs(env, prompt, reply) {
   return args;
 }
 
+function checkReplyEligibility(env, prompt) {
+  const canonicalSession = parseCanonicalSessionKey(
+    env.OKX_A2A_CURRENT_SESSION_KEY || ""
+  );
+  const currentAgentId =
+    env.OKX_A2A_CURRENT_AGENT_ID ||
+    env.OKX_AGENT_TASK_CURRENT_SESSION_AGENT_ID ||
+    canonicalSession?.myAgentId ||
+    "";
+  const senderAgentId = extractPeerAgentId(prompt);
+
+  if (String(currentAgentId) !== TERRA_AGENT_ID) {
+    return {
+      eligible: false,
+      reason: `current_agent_is_not_terra:${currentAgentId || "unknown"}`
+    };
+  }
+
+  if (String(senderAgentId || "") === TERRA_AGENT_ID) {
+    return {
+      eligible: false,
+      reason: "sender_is_terra"
+    };
+  }
+
+  return { eligible: true };
+}
+
 function sendReply({ env, prompt, reply, spawn = spawnSync }) {
+  const eligibility = checkReplyEligibility(env, prompt);
+  if (!eligibility.eligible) {
+    return { sent: false, reason: eligibility.reason };
+  }
+
   const args = buildSendArgs(env, prompt, reply);
   if (!args) {
     return { sent: false, reason: "no_active_a2a_job" };
@@ -293,6 +328,7 @@ module.exports = {
   SERVICE_MENU,
   buildReply,
   buildSendArgs,
+  checkReplyEligibility,
   extractPeerAgentId,
   parseCanonicalSessionKey,
   providerHealth,
