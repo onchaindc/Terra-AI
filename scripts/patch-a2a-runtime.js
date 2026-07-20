@@ -2,7 +2,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 
-const PATCH_MARKER = "terra-xmtp-liveness-watchdog-v1";
+const PATCH_MARKER = "terra-a2a-runtime-fixes-v2";
 const EXPECTED_VERSION = "0.1.9";
 
 function escapeRegExp(value) {
@@ -186,10 +186,98 @@ function patchSource(source) {
       "this.listenerWatchdogTimers.set(addressKey, watchdogTimer);",
       "void startWithRetry();",
       "logWithTimestamp(",
-      '  `${tag} message listener started watchdogIntervalMs=${WATCHDOG_INTERVAL_MS} watchdogStaleMs=${WATCHDOG_STALE_MS} patch=terra-xmtp-liveness-watchdog-v1`',
+      `  \`\${tag} message listener started watchdogIntervalMs=\${WATCHDOG_INTERVAL_MS} watchdogStaleMs=\${WATCHDOG_STALE_MS} patch=${PATCH_MARKER}\``,
       ");"
     ],
     "XMTP stale-listener watchdog recovery"
+  );
+
+  patched = replaceIndentedBlock(
+    patched,
+    [
+      "buildRunArgs(provider, request, aiSessionId, cwd = this.resolveAiWorkingDir()) {",
+      "  const permissionPreset = this.resolveAiPermissionPresetForRun();",
+      "  const prompt = request.prompt;",
+      '  if (provider === "claude") {',
+      "    return buildAiAdapterCommand({",
+      "      provider,",
+      "      prompt,",
+      "      sessionId: aiSessionId,",
+      "      sessionKey: request.sessionKey,",
+      "      homeDir: this.homeDir,",
+      "      cwd,",
+      "      permissionPreset",
+      "    }).args;",
+      "  }",
+      '  if (provider === "codex") {',
+      "    const commonPrefix = [...buildCodexPermissionPrefix(this.homeDir, cwd, process.env, permissionPreset), \"exec\"];",
+      "    if (aiSessionId) {",
+      "      return [",
+      "        ...commonPrefix,",
+      '        "resume",',
+      '        "--json",',
+      '        "--skip-git-repo-check",',
+      "        aiSessionId,",
+      "        prompt",
+      "      ];",
+      "    }",
+      "    return [",
+      "      ...commonPrefix,",
+      '      "--json",',
+      '      "--skip-git-repo-check",',
+      "      prompt",
+      "    ];",
+      "  }",
+      "  return buildAiAdapterCommand({",
+      "    provider,",
+      "    prompt,",
+      "    sessionId: aiSessionId,",
+      "    sessionKey: request.sessionKey,",
+      "    homeDir: this.homeDir,",
+      "    cwd,",
+      "    permissionPreset",
+      "  }).args;",
+      "}"
+    ],
+    [
+      "buildRunArgs(provider, request, aiSessionId, cwd = this.resolveAiWorkingDir()) {",
+      "  const permissionPreset = this.resolveAiPermissionPresetForRun();",
+      "  const prompt = request.prompt;",
+      '  if (provider === "claude") {',
+      "    return buildAiAdapterCommand({",
+      "      provider,",
+      "      prompt,",
+      "      sessionId: aiSessionId,",
+      "      sessionKey: request.sessionKey,",
+      "      homeDir: this.homeDir,",
+      "      cwd,",
+      "      permissionPreset",
+      "    }).args;",
+      "  }",
+      '  if (provider === "codex") {',
+      "    return buildAiAdapterCommand({",
+      "      provider,",
+      "      prompt,",
+      "      sessionId: aiSessionId,",
+      "      sessionKey: request.sessionKey,",
+      "      homeDir: this.homeDir,",
+      "      cwd,",
+      "      permissionPreset,",
+      "      env: process.env",
+      "    }).args;",
+      "  }",
+      "  return buildAiAdapterCommand({",
+      "    provider,",
+      "    prompt,",
+      "    sessionId: aiSessionId,",
+      "    sessionKey: request.sessionKey,",
+      "    homeDir: this.homeDir,",
+      "    cwd,",
+      "    permissionPreset",
+      "  }).args;",
+      "}"
+    ],
+    "job dispatch custom Codex adapter arguments"
   );
 
   if (!patched.includes(PATCH_MARKER)) {

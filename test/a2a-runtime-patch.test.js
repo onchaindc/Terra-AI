@@ -38,9 +38,54 @@ var XmtpService = class {
       logWithTimestamp(\`\${tag} message listener started\`);
   }
 };
+var SessionMessageDispatcher = class {
+  buildRunArgs(provider, request, aiSessionId, cwd = this.resolveAiWorkingDir()) {
+    const permissionPreset = this.resolveAiPermissionPresetForRun();
+    const prompt = request.prompt;
+    if (provider === "claude") {
+      return buildAiAdapterCommand({
+        provider,
+        prompt,
+        sessionId: aiSessionId,
+        sessionKey: request.sessionKey,
+        homeDir: this.homeDir,
+        cwd,
+        permissionPreset
+      }).args;
+    }
+    if (provider === "codex") {
+      const commonPrefix = [...buildCodexPermissionPrefix(this.homeDir, cwd, process.env, permissionPreset), "exec"];
+      if (aiSessionId) {
+        return [
+          ...commonPrefix,
+          "resume",
+          "--json",
+          "--skip-git-repo-check",
+          aiSessionId,
+          prompt
+        ];
+      }
+      return [
+        ...commonPrefix,
+        "--json",
+        "--skip-git-repo-check",
+        prompt
+      ];
+    }
+    return buildAiAdapterCommand({
+      provider,
+      prompt,
+      sessionId: aiSessionId,
+      sessionKey: request.sessionKey,
+      homeDir: this.homeDir,
+      cwd,
+      permissionPreset
+    }).args;
+  }
+};
 `;
 
-test("runtime patch adds pre-processing inbound logging and watchdog recovery", () => {
+test("runtime patch adds listener recovery and honors custom Codex adapter args", () => {
   const result = patchSource(RUNTIME_FIXTURE);
 
   assert.equal(result.changed, true);
@@ -50,6 +95,14 @@ test("runtime patch adds pre-processing inbound logging and watchdog recovery", 
   assert.match(result.source, /OKX_A2A_XMTP_WATCHDOG_STALE_MS/);
   assert.match(result.source, /watchdog detected stale XMTP listener/);
   assert.match(result.source, /await this\.recycleXmtpClients\(\)/);
+  assert.match(
+    result.source,
+    /return buildAiAdapterCommand\(\{[\s\S]*env: process\.env[\s\S]*\}\)\.args;/
+  );
+  assert.doesNotMatch(
+    result.source,
+    /const commonPrefix = \[\.\.\.buildCodexPermissionPrefix/
+  );
   assert.match(result.source, new RegExp(PATCH_MARKER));
 });
 
