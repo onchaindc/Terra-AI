@@ -1,10 +1,16 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const test = require("node:test");
 const {
   buildReply,
   buildSendArgs,
   checkReplyEligibility,
+  decodePaymentChallenge,
+  extractMessageContent,
   extractPeerAgentId,
+  parseCompareRequest,
   providerHealth,
   runResponder
 } = require("../src/a2a/responder");
@@ -32,6 +38,104 @@ test("Terra A2A responder extracts a peer agent from an inbound envelope", () =>
   });
 
   assert.equal(extractPeerAgentId(prompt), "7001");
+});
+
+test("Terra A2A responder extracts a structured Compare request", () => {
+  const content = JSON.stringify({
+    service: "Compare",
+    properties: [
+      {
+        name: "Maple Court",
+        price: 120000,
+        currency: "USD",
+        sizeSqm: 95,
+        location: "Lagos"
+      },
+      {
+        name: "Riverside Flat",
+        price: 135000,
+        currency: "USD",
+        sizeSqm: 110,
+        location: "Abuja"
+      }
+    ],
+    userPreferences: {
+      purpose: "primary_home"
+    }
+  });
+  const prompt = JSON.stringify({
+    msgType: "a2a-agent-chat",
+    jobId: "job-compare",
+    sender: { role: "USER", agentId: 6782 },
+    message: { content }
+  });
+
+  assert.equal(extractMessageContent(prompt), content);
+  assert.deepEqual(parseCompareRequest(prompt), {
+    properties: JSON.parse(content).properties,
+    userPreferences: {
+      purpose: "primary_home"
+    }
+  });
+});
+
+test("Terra A2A responder decodes the exact x402 challenge", () => {
+  const challenge = {
+    x402Version: 2,
+    accepts: [
+      {
+        scheme: "exact",
+        network: "eip155:196",
+        asset: "0xtoken",
+        amount: "500000",
+        payTo: "0xrecipient"
+      }
+    ]
+  };
+
+  assert.deepEqual(
+    decodePaymentChallenge(Buffer.from(JSON.stringify(challenge)).toString("base64")),
+    challenge
+  );
+});
+
+test("Terra A2A responder parses the CLI-safe Compare wire format", () => {
+  assert.deepEqual(
+    parseCompareRequest(
+      "Compare|Maple_Court_Apartment|120000|USD|95|Lagos_Nigeria|2;Riverside_Flat|135000|USD|110|Abuja_Nigeria|3"
+    ),
+    {
+      properties: [
+        {
+          name: "Maple Court Apartment",
+          price: 120000,
+          currency: "USD",
+          sizeSqm: 95,
+          location: "Lagos Nigeria",
+          bedrooms: 2,
+          propertyType: "apartment"
+        },
+        {
+          name: "Riverside Flat",
+          price: 135000,
+          currency: "USD",
+          sizeSqm: 110,
+          location: "Abuja Nigeria",
+          bedrooms: 3,
+          propertyType: "apartment"
+        }
+      ],
+      userPreferences: {
+        purpose: "primary_home",
+        currency: "USD",
+        priorities: {
+          price: 5,
+          size: 4,
+          location: 3
+        }
+      }
+    }
+  );
 });
 
 test("Terra A2A responder targets the current canonical XMTP session", () => {
@@ -95,6 +199,326 @@ test("Terra A2A responder sends before emitting a valid Codex session", () => {
   assert.equal(result.delivery.sent, true);
   assert.equal(result.events[0].type, "thread.started");
   assert.equal(result.events[1].item.type, "agent_message");
+});
+
+test("Terra A2A responder calls Compare and stores a 402 challenge before replying", (t) => {
+  const taskHome = fs.mkdtempSync(path.join(os.tmpdir(), "terra-a2a-test-"));
+  t.after(() => fs.rmSync(taskHome, { recursive: true, force: true }));
+  const challenge = {
+    x402Version: 2,
+    accepts: [
+      {
+        scheme: "exact",
+        network: "eip155:196",
+        asset: "0xtoken",
+        amount: "500000",
+        payTo: "0xrecipient"
+      }
+    ]
+  };
+  const rawChallenge = Buffer.from(JSON.stringify(challenge)).toString("base64");
+  const calls = [];
+  const prompt = JSON.stringify({
+    msgType: "a2a-agent-chat",
+    jobId: "job-compare",
+    groupId: "group-compare",
+    sender: { role: "USER", agentId: 6782 },
+    message: {
+      content: JSON.stringify({
+        service: "Compare",
+        properties: [
+          { name: "Maple Court", price: 120000, sizeSqm: 95, location: "Lagos" },
+          { name: "Riverside Flat", price: 135000, sizeSqm: 110, location: "Abuja" }
+        ]
+      })
+    }
+  });
+
+  const result = runResponder({
+    prompt,
+    env: {
+      OKX_AGENT_TASK_HOME: taskHome,
+      OKX_A2A_CURRENT_SESSION_KEY: "job:job-compare:my:5105:to:6782",
+      OKX_A2A_CURRENT_JOB_ID: "job-compare",
+      OKX_A2A_CURRENT_AGENT_ID: "5105",
+      OKX_A2A_CURRENT_MESSAGE_ID: "message-compare"
+    },
+    spawn(command, args) {
+      calls.push({ command, args });
+      if (command === "curl.exe") {
+        return {
+          status: 0,
+          stdout: [
+            "HTTP/1.1 402 Payment Required",
+            `PAYMENT-REQUIRED: ${rawChallenge}`,
+            "content-type: application/json",
+            "",
+            JSON.stringify({ error: "Payment Required" })
+          ].join("\r\n"),
+          stderr: ""
+        };
+      }
+      return {
+        status: 0,
+        stdout: JSON.stringify({ ok: true, messageId: "challenge-reply" }),
+        stderr: ""
+      };
+    }
+  });
+
+  assert.deepEqual(
+    calls.map((call) => call.command),
+    ["curl.exe", "okx-a2a"]
+  );
+  assert.match(result.reply, /payment is required/i);
+  assert.equal(result.payment.status, "challenge");
+  assert.equal(result.payment.challenge.amount, "500000");
+  assert.equal(
+    fs.readdirSync(path.join(taskHome, "terra-compare-payments")).length,
+    1
+  );
+});
+
+test("Terra A2A responder does not call Compare when dispatched for tester", () => {
+  const calls = [];
+  const result = runResponder({
+    prompt: JSON.stringify({
+      jobId: "job-compare",
+      sender: { agentId: "5105" },
+      message: {
+        content: JSON.stringify({
+          properties: [{ name: "A" }, { name: "B" }]
+        })
+      }
+    }),
+    env: {
+      OKX_A2A_CURRENT_SESSION_KEY: "job:job-compare:my:6782:to:5105",
+      OKX_A2A_CURRENT_AGENT_ID: "6782"
+    },
+    spawn(command) {
+      calls.push(command);
+      throw new Error("spawn should not run");
+    }
+  });
+
+  assert.deepEqual(calls, []);
+  assert.equal(result.delivery.sent, false);
+});
+
+test("Terra A2A responder reports a failed confirmed payment without replaying Compare", (t) => {
+  const taskHome = fs.mkdtempSync(path.join(os.tmpdir(), "terra-a2a-payment-"));
+  t.after(() => fs.rmSync(taskHome, { recursive: true, force: true }));
+  const rawChallenge = Buffer.from(
+    JSON.stringify({
+      x402Version: 2,
+      accepts: [
+        {
+          scheme: "exact",
+          network: "eip155:196",
+          asset: "0xtoken",
+          amount: "500000",
+          payTo: "0xrecipient"
+        }
+      ]
+    })
+  ).toString("base64");
+  const env = {
+    OKX_AGENT_TASK_HOME: taskHome,
+    OKX_A2A_CURRENT_SESSION_KEY: "job:job-payment:my:5105:to:6782",
+    OKX_A2A_CURRENT_JOB_ID: "job-payment",
+    OKX_A2A_CURRENT_AGENT_ID: "5105",
+    OKX_A2A_CURRENT_MESSAGE_ID: "message-request"
+  };
+  const requestPrompt = JSON.stringify({
+    jobId: "job-payment",
+    sender: { agentId: 6782 },
+    message: {
+      content: JSON.stringify({
+        properties: [
+          { name: "Maple Court", price: 120000, sizeSqm: 95, location: "Lagos" },
+          { name: "Riverside Flat", price: 135000, sizeSqm: 110, location: "Abuja" }
+        ]
+      })
+    }
+  });
+
+  runResponder({
+    prompt: requestPrompt,
+    env,
+    spawn(command) {
+      if (command === "curl.exe") {
+        return {
+          status: 0,
+          stdout: [
+            "HTTP/1.1 402 Payment Required",
+            `PAYMENT-REQUIRED: ${rawChallenge}`,
+            "",
+            ""
+          ].join("\r\n"),
+          stderr: ""
+        };
+      }
+      return {
+        status: 0,
+        stdout: JSON.stringify({ ok: true, messageId: "challenge-reply" }),
+        stderr: ""
+      };
+    }
+  });
+
+  const commands = [];
+  const confirmation = runResponder({
+    prompt: JSON.stringify({
+      jobId: "job-payment",
+      sender: { agentId: 6782 },
+      message: { content: "confirm payment" }
+    }),
+    env: {
+      ...env,
+      OKX_A2A_CURRENT_MESSAGE_ID: "message-confirm"
+    },
+    spawn(command) {
+      commands.push(command);
+      if (command === "onchainos") {
+        return {
+          status: 1,
+          stdout: "",
+          stderr: "insufficient USDT balance"
+        };
+      }
+      return {
+        status: 0,
+        stdout: JSON.stringify({ ok: true, messageId: "failure-reply" }),
+        stderr: ""
+      };
+    }
+  });
+
+  assert.deepEqual(commands, ["onchainos", "okx-a2a"]);
+  assert.equal(confirmation.payment.status, "failed");
+  assert.match(confirmation.reply, /insufficient USDT balance/);
+  assert.equal(
+    fs.readdirSync(path.join(taskHome, "terra-compare-payments")).length,
+    0
+  );
+});
+
+test("Terra A2A responder preserves an insufficient-balance rejection from paid replay", (t) => {
+  const taskHome = fs.mkdtempSync(path.join(os.tmpdir(), "terra-a2a-replay-"));
+  t.after(() => fs.rmSync(taskHome, { recursive: true, force: true }));
+  const challenge = {
+    x402Version: 2,
+    accepts: [
+      {
+        scheme: "exact",
+        network: "eip155:196",
+        asset: "0xtoken",
+        amount: "500000",
+        payTo: "0xrecipient"
+      }
+    ]
+  };
+  const rawChallenge = Buffer.from(JSON.stringify(challenge)).toString("base64");
+  const rejectedChallenge = Buffer.from(
+    JSON.stringify({
+      ...challenge,
+      error: "invalid_exact_evm_insufficient_balance"
+    })
+  ).toString("base64");
+  const env = {
+    OKX_AGENT_TASK_HOME: taskHome,
+    OKX_A2A_CURRENT_SESSION_KEY: "job:job-replay:my:5105:to:6782",
+    OKX_A2A_CURRENT_JOB_ID: "job-replay",
+    OKX_A2A_CURRENT_AGENT_ID: "5105",
+    OKX_A2A_CURRENT_MESSAGE_ID: "message-request"
+  };
+  const requestPrompt = JSON.stringify({
+    jobId: "job-replay",
+    sender: { agentId: 6782 },
+    message: {
+      content: JSON.stringify({
+        properties: [
+          { name: "Maple Court", price: 120000, sizeSqm: 95, location: "Lagos" },
+          { name: "Riverside Flat", price: 135000, sizeSqm: 110, location: "Abuja" }
+        ]
+      })
+    }
+  });
+
+  runResponder({
+    prompt: requestPrompt,
+    env,
+    spawn(command) {
+      if (command === "curl.exe") {
+        return {
+          status: 0,
+          stdout: [
+            "HTTP/1.1 402 Payment Required",
+            `PAYMENT-REQUIRED: ${rawChallenge}`,
+            "",
+            "{}"
+          ].join("\r\n"),
+          stderr: ""
+        };
+      }
+      return {
+        status: 0,
+        stdout: JSON.stringify({ ok: true, messageId: "challenge-reply" }),
+        stderr: ""
+      };
+    }
+  });
+
+  let curlCount = 0;
+  const confirmation = runResponder({
+    prompt: JSON.stringify({
+      jobId: "job-replay",
+      sender: { agentId: 6782 },
+      message: { content: "confirm_payment" }
+    }),
+    env: {
+      ...env,
+      OKX_A2A_CURRENT_MESSAGE_ID: "message-confirm"
+    },
+    spawn(command) {
+      if (command === "onchainos") {
+        return {
+          status: 0,
+          stdout: JSON.stringify({
+            ok: true,
+            data: {
+              header_name: "PAYMENT-SIGNATURE",
+              authorization_header: "signed-payment"
+            }
+          }),
+          stderr: ""
+        };
+      }
+      if (command === "curl.exe") {
+        curlCount += 1;
+        return {
+          status: 0,
+          stdout: [
+            "HTTP/1.1 402 Payment Required",
+            `PAYMENT-REQUIRED: ${rejectedChallenge}`,
+            "",
+            "{}"
+          ].join("\r\n"),
+          stderr: ""
+        };
+      }
+      return {
+        status: 0,
+        stdout: JSON.stringify({ ok: true, messageId: "failure-reply" }),
+        stderr: ""
+      };
+    }
+  });
+
+  assert.equal(curlCount, 1);
+  assert.equal(confirmation.payment.status, "replay_failed");
+  assert.match(confirmation.reply, /Insufficient token balance/);
+  assert.doesNotMatch(confirmation.reply, /Payment result: \{\}/);
 });
 
 test("Terra A2A responder ignores messages dispatched for another local agent", () => {
