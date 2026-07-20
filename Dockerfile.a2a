@@ -21,6 +21,8 @@ RUN npm ci --omit=dev
 
 COPY . .
 
+RUN node /app/scripts/patch-a2a-runtime.js
+
 ENV NODE_ENV=production \
     HOME=/data/home \
     CODEX_HOME=/data/home/.codex \
@@ -30,7 +32,9 @@ ENV NODE_ENV=production \
     OKX_A2A_AI_CODEX_EXEC_ARGS_JSON='["/app/scripts/terra-a2a-responder.js","{prompt}"]' \
     OKX_A2A_AI_CODEX_RESUME_ARGS_JSON='["/app/scripts/terra-a2a-responder.js","{prompt}","{sessionId}"]' \
     OKX_A2A_AI_CWD=/app/cloud-a2a \
-    OKX_A2A_AI_PROVIDER_TIMEOUT_MS=90000
+    OKX_A2A_AI_PROVIDER_TIMEOUT_MS=90000 \
+    OKX_A2A_XMTP_WATCHDOG_INTERVAL_MS=60000 \
+    OKX_A2A_XMTP_WATCHDOG_STALE_MS=300000
 
 RUN mkdir -p /data/home /data/okx-agent-task \
     && ln -s /app/.agents /app/cloud-a2a/.agents \
