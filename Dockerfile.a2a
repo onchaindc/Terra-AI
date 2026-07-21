@@ -21,7 +21,8 @@ RUN npm ci --omit=dev
 
 COPY . .
 
-RUN node /app/scripts/patch-a2a-runtime.js
+RUN sed -i 's/\r$//' /app/scripts/start-a2a-railway.sh \
+    && node /app/scripts/patch-a2a-runtime.js
 
 ENV NODE_ENV=production \
     HOME=/data/home \
