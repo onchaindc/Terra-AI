@@ -15,9 +15,14 @@ var Agent = class _Agent {
           break;
         try {
           await this.#processMessage(message);
-        } catch (error) {}
+        } catch (error) {
+          this.#throwError(error);
+        }
       }
-    } catch (error) {}
+    } catch (error) {
+      this.#isListening = false;
+      this.#throwError(error);
+    }
   }
 };
 var XmtpService = class {
@@ -85,16 +90,18 @@ var SessionMessageDispatcher = class {
 };
 `;
 
-test("runtime patch adds listener recovery and honors custom Codex adapter args", () => {
+test("runtime patch reconnects completed streams and honors custom Codex adapter args", () => {
   const result = patchSource(RUNTIME_FIXTURE);
 
   assert.equal(result.changed, true);
   assert.match(result.source, /emit\("inbound", message\)/);
   assert.match(result.source, /inbound message received/);
-  assert.match(result.source, /OKX_A2A_XMTP_WATCHDOG_INTERVAL_MS/);
-  assert.match(result.source, /OKX_A2A_XMTP_WATCHDOG_STALE_MS/);
-  assert.match(result.source, /watchdog detected stale XMTP listener/);
-  assert.match(result.source, /await this\.recycleXmtpClients\(\)/);
+  assert.match(result.source, /emit\("stream-end"\)/);
+  assert.match(result.source, /agent\.on\("stream-end"/);
+  assert.match(result.source, /message stream ended unexpectedly; reconnecting/);
+  assert.doesNotMatch(result.source, /WATCHDOG_STALE_MS/);
+  assert.doesNotMatch(result.source, /watchdog detected stale XMTP listener/);
+  assert.doesNotMatch(result.source, /recycleXmtpClients/);
   assert.match(
     result.source,
     /return buildAiAdapterCommand\(\{[\s\S]*env: process\.env[\s\S]*\}\)\.args;/
