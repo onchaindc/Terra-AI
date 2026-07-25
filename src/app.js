@@ -200,6 +200,7 @@ function createApp() {
   app.set("trust proxy", 1);
   app.use(helmet());
   app.use(cors());
+  app.use(x402Middleware);
   app.use(express.json({ limit: "1mb" }));
   app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 

@@ -44,7 +44,12 @@ function startFacilitatorStub() {
 
 function requestChallenge(server, method, path, payload) {
   const address = server.address();
-  const body = method === "POST" ? JSON.stringify(payload) : "";
+  const body =
+    method === "POST"
+      ? typeof payload === "string"
+        ? payload
+        : JSON.stringify(payload)
+      : "";
 
   return new Promise((resolve, reject) => {
     const request = http.request(
@@ -171,6 +176,15 @@ test("x402 challenges use public HTTPS URLs behind Railway", async (t) => {
       );
     }
   }
+
+  const malformedResponse = await requestChallenge(
+    server,
+    "POST",
+    "/api/v1/compare",
+    "{"
+  );
+  assert.equal(malformedResponse.statusCode, 402);
+  assert.ok(malformedResponse.headers["payment-required"]);
 
   assert.equal(facilitator.getSupportedCalls(), 1);
 });

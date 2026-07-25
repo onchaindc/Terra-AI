@@ -1,6 +1,5 @@
 const express = require("express");
 
-const x402Middleware = require("../middleware/x402");
 const {
   buildHiddenCostsReport,
   scoreSingleProperty
@@ -21,7 +20,7 @@ function sendToolResponse(builder) {
   };
 }
 
-router.get("/hidden-costs", x402Middleware, (req, res) => {
+router.get("/hidden-costs", (req, res) => {
   res.json({
     service: "Terra Hidden Costs",
     method: "POST",
@@ -33,11 +32,10 @@ router.get("/hidden-costs", x402Middleware, (req, res) => {
 
 router.post(
   "/hidden-costs",
-  x402Middleware,
   sendToolResponse(buildHiddenCostsReport)
 );
 
-router.get("/investment-check", x402Middleware, (req, res) => {
+router.get("/investment-check", (req, res) => {
   res.json({
     service: "Terra Investment Check",
     method: "POST",
@@ -49,13 +47,12 @@ router.get("/investment-check", x402Middleware, (req, res) => {
 
 router.post(
   "/investment-check",
-  x402Middleware,
   sendToolResponse((payload, payment) =>
     scoreSingleProperty(payload, payment, "rental_investment")
   )
 );
 
-router.get("/buyer-fit", x402Middleware, (req, res) => {
+router.get("/buyer-fit", (req, res) => {
   res.json({
     service: "Terra Buyer Fit",
     method: "POST",
@@ -67,7 +64,6 @@ router.get("/buyer-fit", x402Middleware, (req, res) => {
 
 router.post(
   "/buyer-fit",
-  x402Middleware,
   sendToolResponse((payload, payment) =>
     scoreSingleProperty(payload, payment, "primary_home")
   )

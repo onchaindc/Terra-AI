@@ -1,12 +1,11 @@
 const express = require("express");
 
-const x402Middleware = require("../middleware/x402");
 const validateCompareRequest = require("../middleware/validateRequest");
 const { compareProperties } = require("../services/compareService");
 
 const router = express.Router();
 
-router.get("/", x402Middleware, (req, res) => {
+router.get("/", (req, res) => {
   res.json({
     service: process.env.TERRA_SERVICE_NAME || "Terra Compare",
     method: "POST",
@@ -24,7 +23,7 @@ router.get("/", x402Middleware, (req, res) => {
   });
 });
 
-router.post("/", x402Middleware, validateCompareRequest, (req, res, next) => {
+router.post("/", validateCompareRequest, (req, res, next) => {
   try {
     const report = compareProperties(req.validatedBody, req.payment);
 
