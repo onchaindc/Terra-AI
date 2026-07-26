@@ -154,7 +154,31 @@ test("x402 challenges use public HTTPS URLs behind Railway", async (t) => {
       const bodyChallenge = JSON.parse(response.body);
 
       assert.equal(isPaymentRequired(challenge), true);
-      assert.deepEqual(bodyChallenge, {});
+      if (method === "POST") {
+        assert.equal(bodyChallenge.error, "PaymentRequired");
+        assert.equal(bodyChallenge.inputSchema.type, "object");
+        assert.deepEqual(
+          bodyChallenge.required,
+          currentCase.path === "/api/v1/compare"
+            ? ["properties"]
+            : ["property"]
+        );
+        assert.equal(
+          challenge.extensions.bazaar.info.input.method,
+          "POST"
+        );
+        assert.equal(
+          challenge.extensions.bazaar.info.input.bodyType,
+          "json"
+        );
+        assert.deepEqual(
+          challenge.extensions.bazaar.schema.properties.input.properties.body,
+          bodyChallenge.inputSchema
+        );
+      } else {
+        assert.deepEqual(bodyChallenge, {});
+        assert.equal(challenge.extensions, undefined);
+      }
       assert.equal(challenge.x402Version, 2);
       assert.equal(challenge.error, "Payment required");
       assert.equal(

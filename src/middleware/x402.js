@@ -81,6 +81,169 @@ function buildDemoPayment(req) {
   };
 }
 
+const propertyExample = {
+  name: "Maple Court",
+  price: 120000,
+  currency: "USD",
+  sizeSqm: 95,
+  location: "Lagos"
+};
+
+const userPreferencesExample = {
+  purpose: "primary_home",
+  currency: "USD"
+};
+
+const propertySchema = {
+  oneOf: [
+    {
+      type: "string",
+      minLength: 3,
+      description: "Property listing text, address, or URL."
+    },
+    {
+      type: "object",
+      additionalProperties: true,
+      properties: {
+        name: { type: "string" },
+        address: { type: "string" },
+        url: { type: "string", format: "uri" },
+        price: { type: "number", exclusiveMinimum: 0 },
+        currency: { type: "string" },
+        bedrooms: { type: "number", minimum: 0 },
+        bathrooms: { type: "number", minimum: 0 },
+        sizeSqm: { type: "number", exclusiveMinimum: 0 },
+        location: { type: "string" },
+        condition: { type: "string" },
+        rentalYieldPercent: { type: "number", minimum: 0 },
+        features: { type: "array", items: { type: "string" } },
+        notes: { type: "string" }
+      }
+    }
+  ]
+};
+
+const preferencesSchema = {
+  type: "object",
+  additionalProperties: true,
+  properties: {
+    budget: { type: "number", exclusiveMinimum: 0 },
+    currency: { type: "string" },
+    purpose: {
+      type: "string",
+      enum: [
+        "primary_home",
+        "rental_investment",
+        "flip",
+        "vacation_home",
+        "mixed"
+      ]
+    },
+    mustHaves: { type: "array", items: { type: "string" } },
+    dealBreakers: { type: "array", items: { type: "string" } }
+  }
+};
+
+function discoveryExtension(body, bodySchema, outputExample) {
+  const input = {
+    type: "http",
+    method: "POST",
+    bodyType: "json",
+    body
+  };
+  const output = {
+    type: "json",
+    example: outputExample
+  };
+
+  return {
+    bazaar: {
+      info: { input, output },
+      schema: {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        type: "object",
+        properties: {
+          input: {
+            type: "object",
+            properties: {
+              type: { type: "string", const: "http" },
+              method: { type: "string", const: "POST" },
+              bodyType: { type: "string", const: "json" },
+              body: bodySchema
+            },
+            required: ["type", "method", "bodyType", "body"]
+          },
+          output: {
+            type: "object",
+            properties: {
+              type: { type: "string", const: "json" },
+              example: { type: "object" }
+            },
+            required: ["type", "example"]
+          }
+        },
+        required: ["input", "output"]
+      }
+    }
+  };
+}
+
+function inputRequiredBody(description, bodySchema, example) {
+  return {
+    contentType: "application/json",
+    body: {
+      success: false,
+      error: "PaymentRequired",
+      message: description,
+      required: bodySchema.required || [],
+      inputSchema: bodySchema,
+      example
+    }
+  };
+}
+
+const compareBodySchema = {
+  type: "object",
+  properties: {
+    properties: {
+      type: "array",
+      minItems: 2,
+      maxItems: 5,
+      items: propertySchema
+    },
+    userPreferences: preferencesSchema
+  },
+  required: ["properties"]
+};
+
+const singlePropertyBodySchema = {
+  type: "object",
+  properties: {
+    property: propertySchema,
+    userPreferences: preferencesSchema
+  },
+  required: ["property"]
+};
+
+const compareExample = {
+  properties: [
+    propertyExample,
+    {
+      ...propertyExample,
+      name: "Riverside Flat",
+      price: 135000,
+      sizeSqm: 110,
+      location: "Abuja"
+    }
+  ],
+  userPreferences: userPreferencesExample
+};
+
+const singlePropertyExample = {
+  property: propertyExample,
+  userPreferences: userPreferencesExample
+};
+
 function demoMiddleware(req, res, next) {
   const requireHeader = process.env.X402_REQUIRE_HEADER === "true";
   const payment = buildDemoPayment(req);
@@ -151,7 +314,24 @@ function buildOkxRuntime() {
       "POST /api/v1/compare": {
         accepts,
         description: "Terra Compare property comparison report",
-        mimeType: "application/json"
+        mimeType: "application/json",
+        extensions: discoveryExtension(
+          compareExample,
+          compareBodySchema,
+          {
+            success: true,
+            data: {
+              ranking: [],
+              recommendation: {}
+            }
+          }
+        ),
+        unpaidResponseBody: () =>
+          inputRequiredBody(
+            "Payment is required. The paid request body must include two to five properties.",
+            compareBodySchema,
+            compareExample
+          )
       },
       "GET /api/v1/hidden-costs": {
         accepts,
@@ -161,7 +341,18 @@ function buildOkxRuntime() {
       "POST /api/v1/hidden-costs": {
         accepts,
         description: "Terra Hidden Costs first-year property cost estimate",
-        mimeType: "application/json"
+        mimeType: "application/json",
+        extensions: discoveryExtension(
+          singlePropertyExample,
+          singlePropertyBodySchema,
+          { success: true, data: { totalFirstYearCosts: 0 } }
+        ),
+        unpaidResponseBody: () =>
+          inputRequiredBody(
+            "Payment is required. The paid request body must include a property.",
+            singlePropertyBodySchema,
+            singlePropertyExample
+          )
       },
       "GET /api/v1/investment-check": {
         accepts,
@@ -171,7 +362,18 @@ function buildOkxRuntime() {
       "POST /api/v1/investment-check": {
         accepts,
         description: "Terra Investment Check property investment score",
-        mimeType: "application/json"
+        mimeType: "application/json",
+        extensions: discoveryExtension(
+          singlePropertyExample,
+          singlePropertyBodySchema,
+          { success: true, data: { overallScore: 0 } }
+        ),
+        unpaidResponseBody: () =>
+          inputRequiredBody(
+            "Payment is required. The paid request body must include a property.",
+            singlePropertyBodySchema,
+            singlePropertyExample
+          )
       },
       "GET /api/v1/buyer-fit": {
         accepts,
@@ -181,7 +383,18 @@ function buildOkxRuntime() {
       "POST /api/v1/buyer-fit": {
         accepts,
         description: "Terra Buyer Fit property preference score",
-        mimeType: "application/json"
+        mimeType: "application/json",
+        extensions: discoveryExtension(
+          singlePropertyExample,
+          singlePropertyBodySchema,
+          { success: true, data: { overallScore: 0 } }
+        ),
+        unpaidResponseBody: () =>
+          inputRequiredBody(
+            "Payment is required. The paid request body must include a property.",
+            singlePropertyBodySchema,
+            singlePropertyExample
+          )
       }
     },
     resourceServer,
