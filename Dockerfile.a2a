@@ -5,7 +5,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g \
-    @okxweb3/a2a-node@0.1.9 \
+    @okxweb3/a2a-node@0.1.10 \
     @openai/codex@latest
 
 RUN curl -fsSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh \

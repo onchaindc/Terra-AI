@@ -3,7 +3,7 @@ const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 
 const PATCH_MARKER = "terra-a2a-runtime-fixes-v3";
-const EXPECTED_VERSION = "0.1.9";
+const EXPECTED_VERSION = "0.1.10";
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
