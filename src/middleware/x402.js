@@ -144,6 +144,22 @@ const preferencesSchema = {
   }
 };
 
+function buildOutputSchema(bodySchema, outputExample) {
+  return {
+    method: "POST",
+    input: {
+      type: "http",
+      method: "POST",
+      bodyType: "json",
+      body: bodySchema
+    },
+    output: {
+      type: "json",
+      example: outputExample
+    }
+  };
+}
+
 function discoveryExtension(body, bodySchema, outputExample) {
   const input = {
     type: "http",
@@ -156,9 +172,13 @@ function discoveryExtension(body, bodySchema, outputExample) {
     example: outputExample
   };
 
+  const outputSchema = buildOutputSchema(bodySchema, outputExample);
+
   return {
+    outputSchema,
     bazaar: {
       info: { input, output },
+      outputSchema,
       schema: {
         $schema: "https://json-schema.org/draft/2020-12/schema",
         type: "object",
@@ -188,7 +208,17 @@ function discoveryExtension(body, bodySchema, outputExample) {
   };
 }
 
-function inputRequiredBody(description, bodySchema, example) {
+function acceptsWithOutputSchema(accepts, bodySchema, outputExample) {
+  return {
+    ...accepts,
+    extra: {
+      ...(accepts.extra || {}),
+      outputSchema: buildOutputSchema(bodySchema, outputExample)
+    }
+  };
+}
+
+function inputRequiredBody(description, bodySchema, example, outputExample) {
   return {
     contentType: "application/json",
     body: {
@@ -197,6 +227,7 @@ function inputRequiredBody(description, bodySchema, example) {
       message: description,
       required: bodySchema.required || [],
       inputSchema: bodySchema,
+      outputSchema: buildOutputSchema(bodySchema, outputExample),
       example
     }
   };
@@ -242,6 +273,29 @@ const compareExample = {
 const singlePropertyExample = {
   property: propertyExample,
   userPreferences: userPreferencesExample
+};
+
+const compareOutputExample = {
+  success: true,
+  data: {
+    ranking: [],
+    recommendation: {}
+  }
+};
+
+const hiddenCostsOutputExample = {
+  success: true,
+  data: { totalFirstYearCosts: 0 }
+};
+
+const investmentCheckOutputExample = {
+  success: true,
+  data: { overallScore: 0 }
+};
+
+const buyerFitOutputExample = {
+  success: true,
+  data: { overallScore: 0 }
 };
 
 function demoMiddleware(req, res, next) {
@@ -312,25 +366,24 @@ function buildOkxRuntime() {
         mimeType: "application/json"
       },
       "POST /api/v1/compare": {
-        accepts,
+        accepts: acceptsWithOutputSchema(
+          accepts,
+          compareBodySchema,
+          compareOutputExample
+        ),
         description: "Terra Compare property comparison report",
         mimeType: "application/json",
         extensions: discoveryExtension(
           compareExample,
           compareBodySchema,
-          {
-            success: true,
-            data: {
-              ranking: [],
-              recommendation: {}
-            }
-          }
+          compareOutputExample
         ),
         unpaidResponseBody: () =>
           inputRequiredBody(
             "Payment is required. The paid request body must include two to five properties.",
             compareBodySchema,
-            compareExample
+            compareExample,
+            compareOutputExample
           )
       },
       "GET /api/v1/hidden-costs": {
@@ -339,19 +392,24 @@ function buildOkxRuntime() {
         mimeType: "application/json"
       },
       "POST /api/v1/hidden-costs": {
-        accepts,
+        accepts: acceptsWithOutputSchema(
+          accepts,
+          singlePropertyBodySchema,
+          hiddenCostsOutputExample
+        ),
         description: "Terra Hidden Costs first-year property cost estimate",
         mimeType: "application/json",
         extensions: discoveryExtension(
           singlePropertyExample,
           singlePropertyBodySchema,
-          { success: true, data: { totalFirstYearCosts: 0 } }
+          hiddenCostsOutputExample
         ),
         unpaidResponseBody: () =>
           inputRequiredBody(
             "Payment is required. The paid request body must include a property.",
             singlePropertyBodySchema,
-            singlePropertyExample
+            singlePropertyExample,
+            hiddenCostsOutputExample
           )
       },
       "GET /api/v1/investment-check": {
@@ -360,19 +418,24 @@ function buildOkxRuntime() {
         mimeType: "application/json"
       },
       "POST /api/v1/investment-check": {
-        accepts,
+        accepts: acceptsWithOutputSchema(
+          accepts,
+          singlePropertyBodySchema,
+          investmentCheckOutputExample
+        ),
         description: "Terra Investment Check property investment score",
         mimeType: "application/json",
         extensions: discoveryExtension(
           singlePropertyExample,
           singlePropertyBodySchema,
-          { success: true, data: { overallScore: 0 } }
+          investmentCheckOutputExample
         ),
         unpaidResponseBody: () =>
           inputRequiredBody(
             "Payment is required. The paid request body must include a property.",
             singlePropertyBodySchema,
-            singlePropertyExample
+            singlePropertyExample,
+            investmentCheckOutputExample
           )
       },
       "GET /api/v1/buyer-fit": {
@@ -381,19 +444,24 @@ function buildOkxRuntime() {
         mimeType: "application/json"
       },
       "POST /api/v1/buyer-fit": {
-        accepts,
+        accepts: acceptsWithOutputSchema(
+          accepts,
+          singlePropertyBodySchema,
+          buyerFitOutputExample
+        ),
         description: "Terra Buyer Fit property preference score",
         mimeType: "application/json",
         extensions: discoveryExtension(
           singlePropertyExample,
           singlePropertyBodySchema,
-          { success: true, data: { overallScore: 0 } }
+          buyerFitOutputExample
         ),
         unpaidResponseBody: () =>
           inputRequiredBody(
             "Payment is required. The paid request body must include a property.",
             singlePropertyBodySchema,
-            singlePropertyExample
+            singlePropertyExample,
+            buyerFitOutputExample
           )
       }
     },

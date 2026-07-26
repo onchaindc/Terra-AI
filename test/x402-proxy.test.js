@@ -171,6 +171,23 @@ test("x402 challenges use public HTTPS URLs behind Railway", async (t) => {
           challenge.extensions.bazaar.info.input.bodyType,
           "json"
         );
+        assert.equal(challenge.extensions.outputSchema.method, "POST");
+        assert.equal(
+          challenge.extensions.outputSchema.input.bodyType,
+          "json"
+        );
+        assert.equal(
+          challenge.extensions.bazaar.outputSchema.input.method,
+          "POST"
+        );
+        assert.deepEqual(
+          challenge.accepts[0].extra.outputSchema.input.body,
+          bodyChallenge.inputSchema
+        );
+        assert.deepEqual(
+          bodyChallenge.outputSchema.input.body,
+          bodyChallenge.inputSchema
+        );
         assert.deepEqual(
           challenge.extensions.bazaar.schema.properties.input.properties.body,
           bodyChallenge.inputSchema
