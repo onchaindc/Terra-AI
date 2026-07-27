@@ -38,6 +38,95 @@ function toNumber(value) {
   return Number.isFinite(number) ? number : null;
 }
 
+const PROPERTY_FIELDS = [
+  "id",
+  "name",
+  "address",
+  "url",
+  "price",
+  "currency",
+  "bedrooms",
+  "bathrooms",
+  "sizeSqm",
+  "location",
+  "neighborhood",
+  "propertyType",
+  "condition",
+  "estimatedHoaMonthly",
+  "annualPropertyTax",
+  "schoolScore",
+  "safetyScore",
+  "amenityScore",
+  "locationScore",
+  "commuteMinutes",
+  "rentalYieldPercent",
+  "appreciationScore",
+  "livingQualityScore",
+  "investmentPotentialScore",
+  "features",
+  "notes"
+];
+
+const NUMERIC_PROPERTY_FIELDS = new Set([
+  "price",
+  "bedrooms",
+  "bathrooms",
+  "sizeSqm",
+  "estimatedHoaMonthly",
+  "annualPropertyTax",
+  "schoolScore",
+  "safetyScore",
+  "amenityScore",
+  "locationScore",
+  "commuteMinutes",
+  "rentalYieldPercent",
+  "appreciationScore",
+  "livingQualityScore",
+  "investmentPotentialScore"
+]);
+
+function parseSerializedProperty(input) {
+  if (typeof input !== "string") return input;
+
+  const trimmed = input.trim();
+  if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return input;
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch {
+    // The payment client currently serializes nested objects without JSON quotes.
+  }
+
+  const content = trimmed.slice(1, -1);
+  const fieldPattern = PROPERTY_FIELDS.join("|");
+  const matcher = new RegExp(`(?:^|,)(${fieldPattern}):`, "g");
+  const matches = Array.from(content.matchAll(matcher));
+  if (matches.length === 0) return input;
+
+  const parsed = {};
+
+  for (let index = 0; index < matches.length; index += 1) {
+    const match = matches[index];
+    const key = match[1];
+    const valueStart = match.index + match[0].length;
+    const valueEnd =
+      index + 1 < matches.length ? matches[index + 1].index : content.length;
+    const rawValue = content.slice(valueStart, valueEnd).trim();
+
+    if (NUMERIC_PROPERTY_FIELDS.has(key)) {
+      const numericValue = toNumber(rawValue);
+      parsed[key] = numericValue === null ? rawValue : numericValue;
+    } else {
+      parsed[key] = rawValue;
+    }
+  }
+
+  return parsed;
+}
+
 function normalizePriorityWeights(priorities, purpose = "mixed") {
   const source = priorities || PURPOSE_PRIORITIES[purpose] || DEFAULT_PRIORITIES;
   const numeric = Object.fromEntries(
@@ -74,12 +163,14 @@ function normalizePreferences(input = {}, fallbackPurpose = "mixed") {
 }
 
 function normalizeProperty(input, preferences = {}, id = "property_1") {
-  if (typeof input === "string") {
+  const decodedInput = parseSerializedProperty(input);
+
+  if (typeof decodedInput === "string") {
     return {
       id,
-      name: input.slice(0, 80) || "Property",
-      rawInput: input,
-      address: input,
+      name: decodedInput.slice(0, 80) || "Property",
+      rawInput: decodedInput,
+      address: decodedInput,
       currency: preferences.currency || "USD",
       features: [],
       dataCoverage: 0.2,
@@ -88,7 +179,7 @@ function normalizeProperty(input, preferences = {}, id = "property_1") {
     };
   }
 
-  const source = input || {};
+  const source = decodedInput || {};
   const price = toNumber(source.price);
   const sizeSqm = toNumber(source.sizeSqm);
   const signalFields = [
